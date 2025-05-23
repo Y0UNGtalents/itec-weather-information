@@ -268,6 +268,11 @@
 
     function setupSpeechRecognition() {
         if (typeof window === 'undefined' || !('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            if ('SpeechRecognition' in window ) {
+                console.log("SpeechRecognition")
+            } else {
+                console.log("webkitSpeechRecognition")
+            }
             console.warn("Speech Recognition API nicht im Browser unterstützt.");
             error = "Spracherkennung wird von Ihrem Browser nicht unterstützt.";
             // isListening bleibt false, keine Endlosschleife versuchen
