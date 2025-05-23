@@ -1,0 +1,15 @@
+*.log
+
+# Ignoriere einen bestimmten Ordner (und seinen gesamten Inhalt)
+node_modules/
+dist/
+build/
+.idea
+
+# Ignoriere eine bestimmte Datei
+.env
+config.local.php
+
+# Ignoriere Betriebssystem-spezifische Dateien
+.DS_Store
+Thumbs.db
