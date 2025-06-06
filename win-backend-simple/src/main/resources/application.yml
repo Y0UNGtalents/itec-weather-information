@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: weather-forecast-service
+  docker:
+    compose:
+      enabled: false  # Deaktiviert Docker Compose Support
+
+openweathermap:
+  api:
+    url: https://api.openweathermap.org/data/2.5/forecast
+
+logging:
+  level:
+    schwarz.it.lws.weatherforecast: DEBUG
+
+server:
+  port: 8080

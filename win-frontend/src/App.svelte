@@ -60,6 +60,7 @@
             }
 
             const newWeatherData = await response.json();
+            console.log(JSON.stringify("newWeatherData"))
             weatherData = newWeatherData;
             processWeatherData();
 
