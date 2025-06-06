@@ -1,16 +1,21 @@
+
 <script>
-    import {onMount, onDestroy} from "svelte";
+    import {onMount, onDestroy, afterUpdate} from "svelte";
+    import WeatherLottieIcon from "./WeatherLottieIcon.svelte";
+    import Slider from "./lib/slider.svelte";
 
     // State variables
+    let backgroundVideo = "";
     let city = "Heilbronn";
     let weatherData = [];
     let loading = false;
     let error = null;
-    let dailyForecasts = [];
+
+
     let selectedDayIndex = 0;
     let recentSearches = [];
     let showRecentSearches = false;
-
+    export let dailyForecasts = [];
     let isConnected = true;
     let isSocketConnected = false;    // Für WebSocket-Verbindung
 
@@ -28,10 +33,87 @@
     // WebSocket
     let socket = null;
 
-    //anoimation variablen
-    let drops = Array.from({length: 100});
-    let snowflakes = Array.from({length: 100});
-    let clouds = Array(30).fill(null);
+
+
+    let currentIndex = 1; // Start bei Tag 1 (nicht heute)
+    let carouselInterval = null;
+
+    function getWeatherConditionFromIcon(iconCode) {
+        if (!iconCode) return "default";
+
+        const map = {
+            "01d": "clear",
+            "01n": "clear",
+            "02d": "cloudy",
+            "02n": "cloudy",
+            "03d": "cloudy",
+            "03n": "cloudy",
+            "04d": "cloudy",
+            "04n": "cloudy",
+            "09d": "rain",
+            "09n": "rain",
+            "10d": "rain",
+            "10n": "rain",
+            "11d": "storm",
+            "11n": "storm",
+            "13d": "snow",
+            "13n": "snow",
+            "50d": "fog",
+            "50n": "fog"
+        };
+
+        return map[iconCode] || "default";
+    }
+
+
+
+
+    onMount(() => {
+        const firstLoad = localStorage.getItem('firstLoadDone');
+        if (!firstLoad) {
+            localStorage.setItem('firstLoadDone', 'true');
+
+            if (recognition) recognition.abort();
+            if (socket) socket.close();
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        }
+    });
+    function startCarousel() {
+        if (carouselInterval) clearInterval(carouselInterval);
+
+        if (dailyForecasts.length > 1) {
+            currentIndex = 1;
+            carouselInterval = setInterval(() => {
+                currentIndex = (currentIndex + 1) % dailyForecasts.length;
+            }, 4000);
+        }
+    }
+
+
+    $: if (dailyForecasts.length > 1) {
+        startCarousel();
+    }
+
+
+    onDestroy(() => {
+        if (carouselInterval) clearInterval(carouselInterval);
+    });
+
+
+    function getCardClass(index) {
+        const total = dailyForecasts.length;
+        if (index === currentIndex) return 'center';
+        if ((index + 1) % total === currentIndex) return 'left';
+        if ((index + total - 1) % total === currentIndex) return 'right';
+        return 'hidden';
+    }
+
+
+
+
 
     // Function to fetch weather data
     async function fetchWeatherData(cityName) {
@@ -48,33 +130,26 @@
 
         try {
             console.log(`Fetching weather for: ${cityName}`);
-            const response = await fetch(
-                `http://localhost:8080/api/weather/${cityName}`,
-            );
+
+            const response = await fetch(`http://localhost:8080/api/weather/${cityName}`);
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(
-                    `Wetterdaten für ${cityName} nicht gefunden (${response.status}): ${errorText || response.statusText}`
-                );
+                throw new Error(`Wetterdaten für ${cityName} nicht gefunden (${response.status}): ${errorText || response.statusText}`);
             }
 
             const newWeatherData = await response.json();
-            console.log(JSON.stringify( newWeatherData))
+            console.log(JSON.stringify(newWeatherData, null, 2));
             weatherData = newWeatherData;
             processWeatherData();
 
-            // Stadt zur Suchhistorie hinzufügen
             const displayCity = (dailyForecasts.length > 0 && dailyForecasts[0].city) ? dailyForecasts[0].city : cityName;
             if (!recentSearches.includes(displayCity)) {
                 recentSearches = [displayCity, ...recentSearches.slice(0, 4)];
-                localStorage.setItem(
-                    "recentSearches",
-                    JSON.stringify(recentSearches),
-                );
+                localStorage.setItem("recentSearches", JSON.stringify(recentSearches));
             }
             if (dailyForecasts.length > 0 && dailyForecasts[0].city) {
-                city = dailyForecasts[0].city; // Aktualisiere die globale 'city' Variable
+                city = dailyForecasts[0].city;
             }
 
         } catch (err) {
@@ -82,10 +157,10 @@
             error = `Error fetching weather data: ${err.message}`;
             weatherData = [];
             dailyForecasts = [];
-
         } finally {
             loading = false;
         }
+
     }
 
     // Process weather data to group by day
@@ -95,60 +170,52 @@
             return;
         }
 
-        // Group forecasts by day
         const groupedByDay = {};
 
         weatherData.forEach((item) => {
             const date = new Date(item.forecastDate);
-
-            if (isNaN(date.getTime())) {
-                console.warn("Invalid date in weather data:", item);
-                return;
-            }
-
-            const dayKey = date.toISOString().split("T")[0]; // YYYY-MM-DD format
-
-            if (!groupedByDay[dayKey]) {
-                groupedByDay[dayKey] = [];
-            }
+            if (isNaN(date.getTime())) return;
+            const dayKey = date.toISOString().split("T")[0];
+            if (!groupedByDay[dayKey]) groupedByDay[dayKey] = [];
             groupedByDay[dayKey].push(item);
         });
 
-        // Create daily summary for each day
         dailyForecasts = Object.keys(groupedByDay)
             .map((day) => {
                 const forecasts = groupedByDay[day];
-                const dayData = forecasts[0]; // Use first forecast for basic info
-                const currentTemp = dayData.temperature
-                // Find min and max temperatures for the day
+                const dayData = forecasts[0];
+                const currentTemp = dayData.temperature;
+
+                const middayForecasts = forecasts.filter(f => {
+                    console.log(f.forecastDate);
+                    const hour = new Date(f.forecastDate).getHours();
+                    return hour  === 12
+                });
                 const minTemp = Math.min(...forecasts.map((f) => f.minTemperature));
                 const maxTemp = Math.max(...forecasts.map((f) => f.maxTemperature));
 
-                // Calculate average humidity
+
                 const avgHumidity = Math.round(
                     forecasts.reduce((sum, f) => sum + f.humidity, 0) / forecasts.length
                 );
 
-                // Get the noon forecast if available, otherwise use the first one
-                const noonForecast =
-                    forecasts.find((f) => {
-                        const date = new Date(f.forecastDate);
-                        return date.getHours() >= 12 && date.getHours() < 15;
-                    }) || dayData;
 
-                // Get weather condition category
-                const weatherCondition = getWeatherCondition(noonForecast.description);
 
-                // Filter out forecasts with duplicate formatted times
+
+                const noonForecast = middayForecasts.find(f =>
+                    getWeatherCondition(f.description) !== "cloudy"
+                ) || middayForecasts[0] || dayData;
+                console.log(day, ":", noonForecast);
+
+                const weatherCondition = getWeatherConditionFromIcon(noonForecast.iconCode);
+
                 const uniqueForecasts = [];
                 const seenTimes = new Set();
 
-                // Sort forecasts by time first
                 const sortedForecasts = forecasts.sort(
                     (a, b) => new Date(a.forecastDate) - new Date(b.forecastDate)
                 );
 
-                // Keep only one forecast per formatted time
                 sortedForecasts.forEach(forecast => {
                     const formattedTime = new Date(forecast.forecastDate).toLocaleTimeString("de-DE", {
                         hour: "2-digit",
@@ -171,28 +238,67 @@
                     description: noonForecast.description,
                     iconCode: noonForecast.iconCode,
                     weatherCondition: weatherCondition,
-                    forecasts: uniqueForecasts, // Use filtered forecasts without duplicates
+                    forecasts: uniqueForecasts,
                 };
             })
-            .sort((a, b) => a.date - b.date); // Sort by date
+            .sort((a, b) => a.date - b.date);
 
-        // Reset selected day to first day
         selectedDayIndex = 0;
-        //city = dailyForecasts[0].city
-    }
 
-    // Get weather condition category
+        // Video basierend auf Wetter
+        if (dailyForecasts.length > 0) {
+            const condition = dailyForecasts[0].weatherCondition;
+            const ts = Date.now();
+
+            switch (condition) {
+                case "rain":
+                    backgroundVideo = `/videos/rain.mp4?ts=${ts}`;
+                    break;
+                case "clear":
+                    backgroundVideo = `/videos/clear.mp4?ts=${ts}`;
+                    break;
+                case "cloudy":
+                    backgroundVideo = `/videos/cloudy.mp4?ts=${ts}`;
+                    break;
+                case "snow":
+                    backgroundVideo = `/videos/snow.mp4?ts=${ts}`;
+                    break;
+                default:
+                    backgroundVideo = "";
+            }
+
+        }
+        }
+
+        // Carousel starten (nur nach vollständiger Verarbeitung!)
+        startCarousel();
+
+
+
+
     function getWeatherCondition(description) {
         if (!description) return "default";
-        const desc = description.toLowerCase();
-        if (desc.includes("klar") || desc.includes("himmel")) return "clear";
-        if (desc.includes("wolke") || desc.includes("bewölkt")) return "cloudy";
+
+        const desc = description
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\w\s]/gi, "");
+
+        // ✅ Wichtige Reihenfolge: Regen vor bewölkt!
         if (desc.includes("regen")) return "rain";
         if (desc.includes("schnee")) return "snow";
-        if (desc.includes("gewitter") || desc.includes("sturm")) return "storm";
-        if (desc.includes("nebel")) return "fog";
+        if (desc.includes("gewitter") || desc.includes("sturm") || desc.includes("donner")) return "storm";
+        if (desc.includes("nebel") || desc.includes("dunst")) return "fog";
+        if (desc.includes("klar") || desc.includes("sonnig") || desc.includes("himmel")) return "clear";
+        if (desc.includes("wolke") || desc.includes("bewolkt") || desc.includes("bedeckt")) return "cloudy";
+
         return "default";
     }
+
+
+
+
 
 
     // Format date to display full date
@@ -206,7 +312,7 @@
     }
 
     function formatDay(date) {
-        return new Date(date).toLocaleDateString("de-DE", {weekday: "short"});
+        return new Date(date).toLocaleDateString("de-DE", {weekday: "long"});
     }
 
     function formatTime(dateString) {
@@ -234,6 +340,7 @@
             return `https://openweathermap.org/img/wn/02d@2x.png`;
         }
         return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
     }
 
     // Get background gradient based on time and weather
@@ -343,6 +450,7 @@
                 voicePrompt = "Fehler bei der Spracherkennung.";
                 if (event.error !== 'no-speech' && event.error !== 'aborted') {
                     error = `Spracherkennungsfehler: ${event.error}. ${event.message || ''}`;
+
                 }
                 // Bei bestimmten Fehlern (z.B. 'not-allowed', 'service-not-allowed') das Lauschen dauerhaft stoppen
                 if (['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(event.error)) {
@@ -368,6 +476,11 @@
     }
 
     function initWebSocket() {
+        console.log(JSON.stringify({
+            event: "WebSocketStart",
+            timestamp: new Date().toISOString(),
+            message: "🔌 Starte WebSocket-Verbindung zur Sprach-KI …"
+        }));
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
             console.log("WebSocket ist bereits offen oder verbindet sich.");
             return;
@@ -505,28 +618,37 @@
         fetchWeatherData(searchTerm);
         showRecentSearches = false;
     }
-
-    // Initialize with a default city and load recent searches
     onMount(() => {
+        // 🌐 Verbindung prüfen
         const savedSearches = localStorage.getItem("recentSearches");
         if (savedSearches) {
             recentSearches = JSON.parse(savedSearches);
         }
+
         checkConnection();
         initWebSocket();
-        if (city) fetchWeatherData(city);
 
-        return () => { // Cleanup-Funktion für onDestroy
+        if (city) {
+            fetchWeatherData(city).then(() => {
+                startCarousel(); // nur nach erfolgreichem Abruf starten
+            });
+        }
+
+        // 🧹 Clean-up bei Zerstörung
+        return () => {
+            clearInterval(carouselInterval);
             console.log("App unmounting. Cleaning up resources.");
-            isListening = false; // Wichtig, um die onend-Schleife zu stoppen
+            isListening = false;
+
             if (recognition) {
                 recognition.onstart = null;
                 recognition.onresult = null;
                 recognition.onend = null;
                 recognition.onerror = null;
-                recognition.abort(); // Versuche, die Erkennung aktiv zu stoppen
+                recognition.abort();
                 recognition = null;
             }
+
             if (socket) {
                 socket.onopen = null;
                 socket.onmessage = null;
@@ -541,6 +663,9 @@
         };
     });
 
+
+
+
     // Animationsvariablen und -funktionen
     function generateCloudStyle() {
         const left = Math.random() * 120;
@@ -549,21 +674,43 @@
         const scale = Math.random() * (1 - 0.4) + 0.4;
         const animationDelay = Math.floor(Math.random() * 10); // Zufälliger Delay
         const animationDuration = Math.random() * (30 - 15) + 15; // Zufällige Dauer
-        return `
-        left: ${left}%;
-        bottom: ${bottom}px;
-        opacity: ${opacity};
-        transform: scale(${scale});
-        animation-delay: ${animationDelay}s;
-        animation-duration: ${animationDuration}s;
-        --cloud-y: ${Math.random() * 10 - 5}; /* Leichte y-Variation */
-        --cloud-scale: ${scale};
-        --cloud-opacity: ${opacity};
-    `;
+        return {
+            left: `${left}%`,
+            bottom: `${bottom}px`,
+            opacity,
+            transform: `scale(${scale})`,
+            animationDelay: `${animationDelay}s`,
+            animationDuration: `${animationDuration}s`,
+            "--cloud-y": `${Math.random() * 10 - 5}`,
+            "--cloud-scale": `${scale}`,
+            "--cloud-opacity": `${opacity}`,
+        };
+
+
     }
 </script>
 
 <main>
+
+
+
+
+    {#if backgroundVideo}
+        {#key backgroundVideo}
+            <video
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    class="background-video"
+            >
+                <source src={backgroundVideo} type="video/mp4" />
+            </video>
+        {/key}
+    {/if}
+
+
+
     {#if !isSocketConnected && error && (error.includes("WebSocket") || error.includes("Sprachserver getrennt"))}
         <div class="status-overlay error">
             🔴 WebSocket nicht verbunden. Sprachsteuerung ist offline. {error.includes("versuche") ? error : "Versuche neu zu verbinden..."} <br/> Fehler: {error}
@@ -575,50 +722,8 @@
     {/if}
 
     <div class="weather-app" style="background: {getBackgroundGradient(dailyForecasts[selectedDayIndex] || null)}">
-        {#if dailyForecasts.length > 0 && dailyForecasts[selectedDayIndex]}
-            {@const currentDayForAnimation = dailyForecasts[selectedDayIndex]} <!-- Eigene Konstante für Animationen -->
-            <div class="weather-animation">
-                {#if currentDayForAnimation.weatherCondition === 'rain'}
-                    <div class="rain-animation">
-                        {#each drops as _, i (i)}
-                            <div class="drop" style="left: {Math.random() * 100}%; animation-delay: {Math.random()}s;"></div>
-                        {/each}
-                    </div>
-                {/if}
-                {#if currentDayForAnimation.weatherCondition === 'snow'}
-                    <div class="snow-animation">
-                        {#each snowflakes as _, i (i)}
-                            <div class="snowflake" style="left: {Math.random() * 100}%; animation-delay: {Math.random() * 5}s; animation-duration: {5 + Math.random() * 5}s; --wind: {Math.random() * 4 - 2};"></div>
-                        {/each}
-                    </div>
-                {/if}
-                {#if currentDayForAnimation.weatherCondition === 'cloudy'}
-                    <div class="cloudy-animation">
-                        {#each clouds as _, i (i)}
-                            <div class="cloud" style="{generateCloudStyle()}"></div>
-                        {/each}
-                    </div>
-                {/if}
-                {#if currentDayForAnimation.weatherCondition === 'fog'}
-                    <div class="fog-animation">
-                        {#each Array.from({length: 5}) as _, i (i)}
-                            <div class="fog-layer" style="--fog-opacity: {0.4 - i * 0.05}; --fog-animation-duration: {20 + i * 3}s; --fog-animation-delay: {i * 0.7}s;"></div>
-                        {/each}
-                    </div>
-                {/if}
-                {#if currentDayForAnimation.weatherCondition === 'storm'}
-                    <div class="storm-animation">
-                        {#each drops as _, i (i)}
-                            <div class="drop storm-drop" style="left: {Math.random() * 100}%; animation-delay: {Math.random() * 0.5}s;"></div>
-                        {/each}
-                        <div class="lightning-container">
-                            <div class="lightning"></div>
-                            <div class="lightning delayed"></div>
-                        </div>
-                    </div>
-                {/if}
-            </div>
-        {/if}
+
+
 
         <div class="app-content-wrapper">
             <div class="app-header">
@@ -638,36 +743,7 @@
                     </div>
                 {/if}
 
-                <div class="search-container">
-                    <form on:submit|preventDefault={handleSubmit} class="search-form">
-                        <div class="input-wrapper {isListening || isRecording ? 'listening' : ''}">
-                            <input bind:value={city} bind:this={inputRef}
-                                   placeholder={isRecording ? voicePrompt : "Stadt eingeben..."}
-                                   class="city-input"
-                                   on:focus={() => showRecentSearches = true}
-                                   on:keypress={(e) => { if (e.key === 'Enter') handleSubmit(e); }}
-                                   aria-label="Stadtsuche Textfeld"
-                                   readonly={isRecording}
-                            />
-                            {#if showRecentSearches && recentSearches.length > 0}
-                                <div class="recent-searches">
-                                    {#each recentSearches as searchItem (searchItem)}
-                                        <div class="recent-search-item" role="button"
-                                             on:click={() => selectRecentSearch(searchItem)}
-                                             on:keydown={(e) => {if(e.key === 'Enter') selectRecentSearch(searchItem)}}
-                                             tabindex="0">{searchItem}</div>
-                                    {/each}
-                                </div>
-                            {/if}
-                        </div>
-                        <button type="submit" class="search-button" aria-label="Wetter suchen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
+
             </div>
 
             {#if error && !error.includes("WebSocket") && !error.includes("Sprachserver")}
@@ -702,7 +778,12 @@
                         </div>
 
                         <div class="weather-icon">
-                            <img src={getWeatherIconUrl(currentDay.iconCode)} alt={currentDay.description}/>
+                            <!-- <img src={getWeatherIconUrl(currentDay.iconCode)} alt={currentDay.description}/> -->
+
+                            {#key currentDay.weatherCondition}
+                                <WeatherLottieIcon condition={currentDay.weatherCondition} />
+                            {/key}
+
                             <div class="description">{currentDay.description}</div>
                         </div>
                     </div>
@@ -715,41 +796,45 @@
                     </div>
                 </div>
 
-                <!-- ANZEIGE DER KOMMENDEN TAGE -->
-                {#if dailyForecasts.length > 1}
-                    <div class="next-days-header">Kommende Tage</div>
-                    <div class="next-weather">
-                        {#each dailyForecasts as day, index (day.date)}
-                            {#if index > 0 && index < 6}
-                                <div class="weather-card"
-                                     on:click={() => selectDay(index)}
-                                     on:keydown={e => { if (e.key === 'Enter' || e.key === ' ') selectDay(index); }}
-                                     role="button" tabindex="0"
-                                     class:active={selectedDayIndex === index}>
-                                    <div class="date" style="font-size: 0.9rem; margin-bottom: 5px;">{formatDay(day.date)}</div>
-                                    <div class="weather-icon small">
-                                        <img src={getWeatherIconUrl(day.iconCode)} alt={day.description}/>
-                                    </div>
-                                    <div class="min-max" style="font-size:0.9rem; margin-top: 5px;">
-                                        <span class="max">{Math.round(day.maxTemperature)}°</span>/<span class="min">{Math.round(day.minTemperature)}°</span>
-                                    </div>
-                                    <div class="description" style="font-size: 0.8rem; margin-top: 3px;">{day.description}</div>
-                                </div>
-                            {/if}
-                        {/each}
-                    </div>
+                <!-- ANZEIGE DER KOMMENDEN TAGE ALS 3D-FLIP-CAROUSEL -->
+
+                {#if dailyForecasts.length > 4}<div class="next-days-header"> Kommende Tage</div>
+                    <Slider items={dailyForecasts.slice(1, 5)} formatDay={formatDay}/>
                 {/if}
+
+
             {:else if !loading && !error } <!-- Dieser 'else if' ist jetzt korrekt innerhalb des Haupt-Blocks -->
                 <div class="no-data">
                     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
                     <p>Keine Wetterdaten verfügbar. Bitte suchen Sie nach einer Stadt oder verwenden Sie die Sprachsteuerung (sage "{triggerWord} [Stadt]").</p>
                 </div>
             {/if} <!-- Schließt den {#if loading} ... {:else if ...} ... {:else if ...} Block -->
+
         </div> <!-- Schließt app-content-wrapper -->
+
+
+
+
     </div> <!-- Schließt weather-app -->
+
+
+
 </main>
 
 <style>
+
+    .background-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        min-width: 100%;
+        min-height: 100%;
+        object-fit: cover;
+        z-index: 1;
+
+        pointer-events: none;
+    }
+
     /* Globale Stile & Resets aus "Faruk App.svelte" */
     :global(body) {
         margin: 0;
@@ -791,7 +876,7 @@
         min-height: 100vh;
         padding: 20px;
         transition: background 0.5s ease;
-        color: white;
+        color: black;
         display: flex;
         flex-direction: column;
         align-items: center; /* Zentriert .app-content-wrapper */
@@ -808,28 +893,20 @@
         align-items: center;
     }
 
-    .weather-animation { /* Aus "Faruk App.svelte" */
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        overflow: hidden;
-        z-index: 0;
-    }
 
-    /* Header und Suche (Kombination) */
-    .app-header { /* Aus "Faruk App.svelte" */
+    .app-header {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 30px;
         flex-wrap: wrap;
         gap: 20px;
         flex-direction: column;
         width: 100%;
+        margin-top: 40px;     /* NEU */
+        margin-bottom: 40px;  /* statt 30px */
     }
+
+
 
     h1 { /* Aus "Faruk App.svelte" */
         margin: 0;
@@ -837,6 +914,11 @@
         font-weight: 700;
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
         text-align: center;
+        display: inline-block;
+        padding: 4px 16px;
+        border-radius: 8px;
+        background-color: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(4px);
     }
 
     .voice-hint { /* Aus "Faruk App.svelte" mit Anpassungen */
@@ -986,24 +1068,24 @@
 
     .recent-search-item:hover, .recent-search-item:focus {
         background-color: #f0f0f0;
-        outline: none;
+        outline: no
     }
 
 
-    /* Aktueller Tag & Kommende Tage (basiert auf Faruk-Struktur) */
-    .today-weather-card { /* Klasse aus Faruk-CSS */
-        width: 100%; /* Nimmt volle Breite des .app-content-wrapper */
-        max-width: 600px; /* Zentriert und begrenzt */
-        font-size: 1.2rem; /* Basisschriftgröße für die Karte */
-        text-align: center; /* Standardausrichtung */
-        background-color: rgba(0, 0, 0, 0.2);
+    .today-weather-card {
+        width: 100%;
+        max-width: 690px; /* +15% von 600px */
+        font-size: 1.38rem; /* +15% von 1.2rem */
+        text-align: center;
+        background-color: rgba(255, 255, 255, 0.7);
         border-radius: 16px;
-        padding: 20px 25px;
-        margin: 0 auto 30px auto; /* Zentriert und Abstand */
+        padding: 23px 28px; /* +15% */
+        margin: 0 auto 30px auto;
         backdrop-filter: blur(10px);
         transition: transform 0.2s;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 60px;
     }
 
     .today-weather-card:hover {
@@ -1011,72 +1093,75 @@
     }
 
     .today-weather-card .date {
-        font-size: 1rem;
-        margin-bottom: 8px;
+        font-size: 2.19rem; /* +15% von 1.9rem */
+        margin-bottom: 9px;
         opacity: 0.8;
     }
 
     .today-weather-card .city-name-display {
-        font-size: 2.2rem;
+        font-size: 2.53rem; /* +15% von 2.2rem */
         font-weight: 600;
-        margin-bottom: 15px;
+        margin-bottom: 17px;
     }
 
-    .today-weather-card .weather-info { /* Flex-Layout für Icon und Temp */
+    .weather-icon {
         display: flex;
-        align-items: center; /* Vertikal zentrieren */
-        justify-content: center; /* Horizontal zentrieren */
-        gap: 25px;
-        margin-bottom: 15px;
-        flex-wrap: wrap; /* Falls nicht genug Platz */
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    .today-weather-card .weather-info {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 28px; /* +15% von 25px */
+        margin-bottom: 17px;
+        flex-wrap: wrap;
     }
 
     .today-weather-card .weather-icon img {
-        width: 100px;
-        height: 100px;
+        width: 115px; /* +15% von 100px */
+        height: 115px;
+
+
     }
 
-    /* Größe aus Faruk-CSS */
     .today-weather-card .temperature-container {
         text-align: left;
     }
 
     .today-weather-card .current-temp {
-        font-size: 3.5rem;
+        font-size: 4.03rem; /* +15% von 3.5rem */
         font-weight: 300;
         line-height: 1;
         margin: 0;
     }
 
     .today-weather-card .min-max {
-        font-size: 1.1rem;
+        font-size: 1.27rem; /* +15% von 1.1rem */
         opacity: 0.9;
-        margin-top: 3px;
-    }
-
-    .today-weather-card .min-max .max::after {
-        content: " / ";
-        opacity: 0.7;
-        margin: 0 4px;
+        margin-top: 4px;
     }
 
     .today-weather-card .description {
-        font-size: 1.2rem;
-        margin-top: 10px;
+        font-size: 2.19rem; /* +15% von 1.9rem */
+        margin-top: 11px;
         text-transform: capitalize;
     }
 
     .today-weather-card .details {
         border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding-top: 12px;
-        margin-top: 15px;
+        padding-top: 14px;
+        margin-top: 17px;
     }
 
     .today-weather-card .detail-item {
         display: flex;
         justify-content: space-between;
-        font-size: 1rem;
-        margin-bottom: 5px;
+        font-size: 2.19rem; /* +15% von 1.9rem */
+        margin-bottom: 6px;
     }
 
     .today-weather-card .detail-item .label {
@@ -1084,12 +1169,17 @@
     }
 
 
+
     .next-days-header { /* Aus Aktuelles App.svelte, passt gut */
-        font-size: 1.5rem;
+        font-size: 3.5rem;
         font-weight: 600;
         text-align: center;
-        margin: 25px 0 15px 0;
-        width: 100%;
+        margin: 130px 0 40px 0;
+        display: inline-block;
+        padding: 4px 16px;
+        border-radius: 8px;
+        background-color: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(4px);
     }
 
     .next-weather { /* Layout für kommende Tage aus Faruk-CSS */
@@ -1097,15 +1187,21 @@
         flex-wrap: wrap; /* Erlaubt Umbruch bei Bedarf */
         justify-content: center; /* Zentriert die Karten, wenn sie umbrechen */
         gap: 20px; /* Abstand zwischen Karten */
-        padding: 10px 0;
+
         width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .weather-card { /* Styling der einzelnen Tageskarten aus Faruk-CSS */
         font-size: 1rem; /* Kleinere Schrift für die Karten */
         text-align: center;
         box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
-        background-color: rgba(0, 0, 0, 0.15); /* Etwas transparenter */
+        background-color: white; /* Etwas transparenter */
         border-radius: 12px;
         padding: 15px;
         /* margin-bottom: 20px; /* Entfernt, da gap im Flex-Container */
@@ -1123,7 +1219,7 @@
     }
 
     .weather-card .date {
-        font-size: 0.9em;
+        font-size: 1.9em;
         font-weight: 600;
         margin-bottom: 5px;
     }
@@ -1132,10 +1228,11 @@
         width: 40px;
         height: 40px;
         margin: 3px auto;
+        font-size: 1.9rem;
     }
 
     .weather-card .description {
-        font-size: 0.8em;
+        font-size: 1.8em;
         margin-top: 3px;
         opacity: 0.8;
         height: 2.4em;
@@ -1144,12 +1241,12 @@
     }
 
     .weather-card .min-max {
-        font-size: 0.85em;
+        font-size: 1.85rem;
         margin-top: 5px;
     }
 
     .weather-card .min-max .max::after {
-        content: "/";
+
         opacity: 0.7;
         margin: 0 2px;
     }
@@ -1157,12 +1254,12 @@
 
     /* Allgemeine .min und .max Farben */
     .max, .max-temp {
-        color: #ffddaa;
+        color: #ff9900;
     }
 
     /* Wärmeres Orange/Gelb */
     .min, .min-temp {
-        color: #aaddff;
+        color: #007bff;
     }
 
     /* Helleres Blau */
@@ -1186,14 +1283,8 @@
         animation: spin 1s ease-in-out infinite;
     }
 
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
     .loading-text {
-        font-size: 1rem;
+        font-size: 1.9rem;
         color: white;
         opacity: 0.9;
     }
@@ -1217,7 +1308,7 @@
     }
 
     .no-data p {
-        font-size: 1.1rem;
+        font-size: 1.9rem;
         max-width: 400px;
         opacity: 0.9;
     }
@@ -1234,201 +1325,6 @@
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     }
 
-    /* Animationen für Wettereffekte */
-    .rain-animation .drop {
-        position: absolute;
-        top: -10%;
-        width: 1.5px; /* Etwas dünner */
-        height: 15px; /* Etwas kürzer */
-        background: rgba(200, 220, 255, 0.5); /* Hellblauer Regen */
-        animation: rainDrop 0.6s linear infinite;
-        border-radius: 0 0 50% 50%; /* Tropfenform */
-    }
-
-    @keyframes rainDrop {
-        0% {
-            transform: translateY(0) scaleY(1);
-            opacity: 1;
-        }
-        90% {
-            opacity: 1;
-        }
-        100% {
-            transform: translateY(110vh) scaleY(0.5);
-            opacity: 0;
-        }
-    }
-
-    .snow-animation .snowflake {
-        position: absolute;
-        top: -10%;
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 50%;
-        width: clamp(3px, 0.8vw, 7px);
-        height: clamp(3px, 0.8vw, 7px);
-        animation: snowfall linear infinite;
-        opacity: 0; /* Startet unsichtbar */
-        filter: blur(0.5px);
-    }
-
-    @keyframes snowfall {
-        0% {
-            transform: translate(0, 0) rotate(0deg);
-            opacity: 0;
-        }
-        5% {
-            opacity: 1;
-        }
-        /* Wird sichtbar */
-        100% {
-            transform: translate(calc(var(--wind, 0) * 20px), 105vh) rotate(720deg);
-            opacity: 0;
-        }
-        /* --wind kann für Windeffekt genutzt werden */
-    }
-
-    .cloudy-animation .cloud {
-        position: absolute;
-        background-image: radial-gradient(circle, white 60%, transparent 61%),
-        radial-gradient(circle, white 60%, transparent 61%),
-        radial-gradient(circle, white 60%, transparent 61%),
-        radial-gradient(circle, white 60%, transparent 61%);
-        background-repeat: no-repeat;
-        /* Positionen der "Puffs" für eine Wolkenform */
-        background-position: 0% 50%, 30% 30%, 60% 60%, 80% 40%;
-        background-size: 50% 50%, 60% 60%, 55% 55%, 45% 45%;
-        filter: blur(2px);
-        animation: floatCloud linear infinite;
-        /* Basiswerte, werden durch generateCloudStyle überschrieben/ergänzt */
-        width: 200px;
-        height: 100px;
-        opacity: 0.5;
-    }
-
-    @keyframes floatCloud {
-        0% {
-            transform: translateX(-250px) translateY(calc(var(--cloud-y, 0) * 2px)) scale(var(--cloud-scale, 1));
-            opacity: var(--cloud-opacity, 0.5);
-        }
-        100% {
-            transform: translateX(calc(100vw + 250px)) translateY(calc(var(--cloud-y, 0) * 2px)) scale(var(--cloud-scale, 1));
-            opacity: var(--cloud-opacity, 0.5);
-        }
-    }
-
-    .fog-animation .fog-layer {
-        position: absolute;
-        width: 250%; /* Breiter für weichere Kanten */
-        height: 100%;
-        background: linear-gradient(90deg,
-        rgba(200, 210, 220, 0) 0%,
-        rgba(200, 210, 220, var(--fog-opacity)) 20%,
-        rgba(200, 210, 220, var(--fog-opacity)) 80%,
-        rgba(200, 210, 220, 0) 100%);
-        animation: fogMove var(--fog-animation-duration) linear infinite alternate; /* Alternate für hin und her */
-        animation-delay: var(--fog-animation-delay);
-        top: calc(15% + var(--fog-animation-delay) * 8); /* Angepasste Position */
-        opacity: 0.7;
-        filter: blur(10px);
-    }
-
-    @keyframes fogMove {
-        0% {
-            transform: translateX(-30%);
-        }
-        100% {
-            transform: translateX(0%);
-        }
-    }
-
-    .storm-animation .storm-drop {
-        height: 25px;
-        width: 2px;
-        transform: rotate(20deg); /* Stärkerer Winkel */
-        animation: stormDrop 0.4s linear infinite;
-        background: rgba(180, 200, 230, 0.6);
-    }
-
-    @keyframes stormDrop {
-        0% {
-            transform: translateY(0vh) rotate(20deg);
-            opacity: 1;
-        }
-        100% {
-            transform: translateY(110vh) rotate(20deg);
-            opacity: 0;
-        }
-    }
-
-    .storm-animation .lightning-container {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        pointer-events: none;
-        overflow: hidden;
-    }
-
-    .storm-animation .lightning {
-        position: absolute;
-        top: 0;
-        left: 50%; /* Startet mittig */
-        width: 6px; /* Dickerer Blitzkern */
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.8);
-        opacity: 0;
-        transform-origin: top center;
-        transform: translateX(-50%) skewX(-20deg) scaleY(0); /* Startet oben, unsichtbar */
-        box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0.5);
-        animation: lightningStrike 5s ease-out infinite;
-    }
-
-    .storm-animation .lightning.delayed {
-        animation-delay: 2.5s;
-    }
-
-    @keyframes lightningStrike {
-        5% {
-            opacity: 0;
-            transform: translateX(-50%) skewX(-20deg) scaleY(0);
-        }
-        /* Kurz unsichtbar vor dem Blitz */
-        10% {
-            opacity: 1;
-            transform: translateX(-50%) skewX(-20deg) scaleY(1);
-        }
-        /* Blitz erscheint */
-        12% {
-            opacity: 0;
-            transform: translateX(-50%) skewX(-20deg) scaleY(1);
-        }
-        /* Blitz verschwindet kurz */
-        14% {
-            opacity: 0.7;
-            transform: translateX(-50%) skewX(-15deg) scaleY(1);
-        }
-        /* Nachblitz */
-        16% {
-            opacity: 0;
-            transform: translateX(-50%) skewX(-15deg) scaleY(1);
-        }
-        100% {
-            opacity: 0;
-        }
-    }
-
-    @keyframes pulse { /* Aus Faruk-CSS, für .input-wrapper.listening */
-        0% {
-            box-shadow: 0 0 0 0 rgba(255, 100, 100, 0.5);
-        }
-        70% {
-            box-shadow: 0 0 0 10px rgba(255, 100, 100, 0);
-        }
-        100% {
-            box-shadow: 0 0 0 0 rgba(255, 100, 100, 0);
-        }
-    }
 
     /* Media Queries für Responsiveness */
     @media (max-width: 768px) {
@@ -1487,6 +1383,7 @@
         .weather-card {
             width: 110px;
             padding: 12px;
+
         }
 
         /* Kleinere Karten */
