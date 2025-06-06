@@ -7,6 +7,7 @@ data class DaySummaryDto(
     val minTemperature: Double,
     val maxTemperature: Double,
     val iconCode: String,
+    val main: String,
     val description: String,
     val humidity: Int
 )

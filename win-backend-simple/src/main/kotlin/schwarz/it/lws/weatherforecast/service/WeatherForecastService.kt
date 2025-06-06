@@ -71,7 +71,7 @@ class WeatherForecastService(
             minTemperature = temperatures.minOrNull() ?: 0.0,
             maxTemperature = temperatures.maxOrNull() ?: 0.0,
             averageHumidity = humidities.average().roundToInt(),
-            dominantIcon = iconSelectionStrategy.selectDominantIcon(entries),
+            dominantIcon = findDominantIcon(entries),
             dominantWeatherMain = findDominantWeatherMain(entries),
             dominantDescription = findDominantDescription(entries),
             precipitationProbability = entries.map { it.pop }.maxOrNull() ?: 0.0,
@@ -82,19 +82,40 @@ class WeatherForecastService(
     }
 
     private fun findDominantWeatherMain(entries: List<WeatherEntry>): String {
-        return entries
-            .flatMap { it.weather }
-            .groupingBy { it.main }
-            .eachCount()
-            .maxByOrNull { it.value }?.key ?: "Clear"
+        val forcast12 = entries.find { it.dt_txt.endsWith("12:00:00") }
+        if (forcast12 != null) {
+            return forcast12.weather[0].main
+        } else {
+            return entries
+                .flatMap { it.weather }
+                .groupingBy { it.main }
+                .eachCount()
+                .maxByOrNull { it.value }?.key ?: "Clear"
+        }
     }
 
     private fun findDominantDescription(entries: List<WeatherEntry>): String {
-        return entries
-            .flatMap { it.weather }
-            .groupingBy { it.description }
-            .eachCount()
-            .maxByOrNull { it.value }?.key ?: "Klarer Himmel"
+
+        val forcast12 = entries.find { it.dt_txt.endsWith("12:00:00") }
+        if (forcast12 != null) {
+            return forcast12.weather[0].description
+        } else {
+            return entries
+                .flatMap { it.weather }
+                .groupingBy { it.description }
+                .eachCount()
+                .maxByOrNull { it.value }?.key ?: "Klarer Himmel"
+        }
+    }
+
+    private fun findDominantIcon(entries: List<WeatherEntry>): String {
+
+        val forcast12 = entries.find { it.dt_txt.endsWith("12:00:00") }
+        if (forcast12 != null) {
+            return forcast12.weather[0].icon
+        } else {
+            return iconSelectionStrategy.selectDominantIcon(entries)
+        }
     }
 
     private fun createEmptyDailyForecast(date: LocalDate): DailyForecast {
