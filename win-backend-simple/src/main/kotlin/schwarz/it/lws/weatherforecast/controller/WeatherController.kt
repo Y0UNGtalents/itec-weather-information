@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import schwarz.it.lws.weatherforecast.controller.dto.DaySummaryDto
-import schwarz.it.lws.weatherforecast.model.FiveDayForecast
 import schwarz.it.lws.weatherforecast.service.WeatherForecastService
 
 @RestController
@@ -15,31 +14,22 @@ import schwarz.it.lws.weatherforecast.service.WeatherForecastService
 @Validated
 class WeatherController(private val weatherForecastService: WeatherForecastService) {
 
-    @GetMapping("/raw/{city}")
-    fun getForecastRaw(
-        @PathVariable city: String,
-    ): ResponseEntity<FiveDayForecast> {
-        val forecast = weatherForecastService.getFiveDayForecast(city)
-        return ResponseEntity.ok(forecast)
-    }
-
     @GetMapping("/{city}")
     fun getForecast(
         @PathVariable city: String,
     ): ResponseEntity<List<DaySummaryDto>> {
 
-        val forecast = weatherForecastService.getFiveDayForecast(city)
-        val dailyForecasts = forecast.dailyForecasts.map { day ->
+        val fiveDayForecast = weatherForecastService.getFiveDayForecast(city)
+        val dailyForecasts = fiveDayForecast.dailyForecasts.map { day ->
             DaySummaryDto(
                 city = city,
                 forecastDate = day.date.toString(),
                 minTemperature = day.minTemperature,
                 maxTemperature = day.maxTemperature,
                 temperature = day.temperature,
-                iconCode = day.dominantIcon,
-                main = day.dominantWeatherMain,
-                description = day.dominantDescription,
-                humidity = day.averageHumidity,
+                iconCode = day.iconCode,
+                description = day.description,
+                humidity = day.humidity,
             )
         }
 

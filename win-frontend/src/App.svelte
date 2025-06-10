@@ -1,42 +1,39 @@
-
 <script>
-    import {onMount, onDestroy, afterUpdate} from "svelte";
-    import WeatherLottieIcon from "./WeatherLottieIcon.svelte";
-    import Slider from "./lib/slider.svelte";
+    import WeatherLottieIcon from "./lib/WeatherLottieIcon.svelte";
+    import Slider from "./lib/Slider.svelte";
 
-    // State variables
-    let backgroundVideo = "";
-    let city = "Heilbronn";
-    let weatherData = [];
-    let loading = false;
-    let error = null;
+    // Props
+    let dailyForecasts = $state([]);
 
-
-    let selectedDayIndex = 0;
-    let recentSearches = [];
-    let showRecentSearches = false;
-    export let dailyForecasts = [];
-    let isConnected = true;
-    let isSocketConnected = false;    // Für WebSocket-Verbindung
+    // State variables - Svelte 5 style
+    let backgroundVideo = $state("");
+    let city = $state("Heilbronn");
+    let weatherData = $state([]);
+    let loading = $state(false);
+    let error = $state(null);
+    let selectedDayIndex = $state(0);
+    let recentSearches = $state([]);
+    let isConnected = $state(true);
+    let isSocketConnected = $state(false);
 
     // Voice recognition variables
-    let recognition = null;
-    let lang = 'de-DE';
-    let isRecording = false;
-    let isListening = false;
-
-    let triggerWord = "Wetter";
-    let voicePrompt = "";
-    let inputRef = null;
-    let showVoiceHint = true;
+    let recognition = $state(null);
+    let lang = $state('de-DE');
+    let isRecording = $state(false);
+    let isListening = $state(false);
+    let showVoiceHint = $state(true);
 
     // WebSocket
-    let socket = null;
+    let socket = $state(null);
 
+    // Carousel variables
+    let currentIndex = $state(1); // Start bei Tag 1 (nicht heute)
+    let carouselInterval = $state(null);
 
+    // Derived values
+    let shouldStartCarousel = $derived(dailyForecasts.length > 1);
 
-    let currentIndex = 1; // Start bei Tag 1 (nicht heute)
-    let carouselInterval = null;
+    const TRIGGER_WORD = "Wetter";
 
     function getWeatherConditionFromIcon(iconCode) {
         if (!iconCode) return "default";
@@ -65,22 +62,6 @@
         return map[iconCode] || "default";
     }
 
-
-
-
-    onMount(() => {
-        const firstLoad = localStorage.getItem('firstLoadDone');
-        if (!firstLoad) {
-            localStorage.setItem('firstLoadDone', 'true');
-
-            if (recognition) recognition.abort();
-            if (socket) socket.close();
-
-            setTimeout(() => {
-                location.reload();
-            }, 3000);
-        }
-    });
     function startCarousel() {
         if (carouselInterval) clearInterval(carouselInterval);
 
@@ -92,39 +73,15 @@
         }
     }
 
-
-    $: if (dailyForecasts.length > 1) {
-        startCarousel();
-    }
-
-
-    onDestroy(() => {
-        if (carouselInterval) clearInterval(carouselInterval);
-    });
-
-
-    function getCardClass(index) {
-        const total = dailyForecasts.length;
-        if (index === currentIndex) return 'center';
-        if ((index + 1) % total === currentIndex) return 'left';
-        if ((index + total - 1) % total === currentIndex) return 'right';
-        return 'hidden';
-    }
-
-
-
-
-
     // Function to fetch weather data
     async function fetchWeatherData(cityName) {
-
         if (!cityName || !cityName.trim()) {
             console.warn("fetchAndDisplayWeatherData: Kein Stadtname angegeben.");
             error = "Bitte geben Sie einen Stadtnamen an.";
-            loading = false; // Sicherstellen, dass Loading beendet wird
+            loading = false;
             return;
         }
-        //city = cityName;
+
         loading = true;
         error = null;
 
@@ -160,7 +117,6 @@
         } finally {
             loading = false;
         }
-
     }
 
     // Process weather data to group by day
@@ -170,136 +126,47 @@
             return;
         }
 
-        const groupedByDay = {};
-
-        weatherData.forEach((item) => {
-            const date = new Date(item.forecastDate);
-            if (isNaN(date.getTime())) return;
-            const dayKey = date.toISOString().split("T")[0];
-            if (!groupedByDay[dayKey]) groupedByDay[dayKey] = [];
-            groupedByDay[dayKey].push(item);
-        });
-
-        dailyForecasts = Object.keys(groupedByDay)
-            .map((day) => {
-                const forecasts = groupedByDay[day];
-                const dayData = forecasts[0];
-                const currentTemp = dayData.temperature;
-
-                const middayForecasts = forecasts.filter(f => {
-                    console.log(f.forecastDate);
-                    const hour = new Date(f.forecastDate).getHours();
-                    return hour  === 12
-                });
-                const minTemp = Math.min(...forecasts.map((f) => f.minTemperature));
-                const maxTemp = Math.max(...forecasts.map((f) => f.maxTemperature));
-
-
-                const avgHumidity = Math.round(
-                    forecasts.reduce((sum, f) => sum + f.humidity, 0) / forecasts.length
-                );
-
-
-
-
-                const noonForecast = middayForecasts.find(f =>
-                    getWeatherCondition(f.description) !== "cloudy"
-                ) || middayForecasts[0] || dayData;
-                console.log(day, ":", noonForecast);
-
-                const weatherCondition = getWeatherConditionFromIcon(noonForecast.iconCode);
-
-                const uniqueForecasts = [];
-                const seenTimes = new Set();
-
-                const sortedForecasts = forecasts.sort(
-                    (a, b) => new Date(a.forecastDate) - new Date(b.forecastDate)
-                );
-
-                sortedForecasts.forEach(forecast => {
-                    const formattedTime = new Date(forecast.forecastDate).toLocaleTimeString("de-DE", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                    });
-
-                    if (!seenTimes.has(formattedTime)) {
-                        seenTimes.add(formattedTime);
-                        uniqueForecasts.push(forecast);
-                    }
-                });
-
-                return {
-                    date: new Date(day),
-                    city: dayData.city,
-                    temperature: currentTemp,
-                    minTemperature: minTemp,
-                    maxTemperature: maxTemp,
-                    avgHumidity: avgHumidity,
-                    description: noonForecast.description,
-                    iconCode: noonForecast.iconCode,
-                    weatherCondition: weatherCondition,
-                    forecasts: uniqueForecasts,
-                };
-            })
-            .sort((a, b) => a.date - b.date);
+        dailyForecasts = weatherData.map((item) => {
+            return {
+                date: new Date(item.forecastDate),
+                city: item.city,
+                temperature: item.temperature,
+                minTemperature: item.minTemperature,
+                maxTemperature: item.maxTemperature,
+                avgHumidity: item.humidity,
+                description: item.description,
+                iconCode: item.iconCode,
+                weatherCondition: getWeatherConditionFromIcon(item.iconCode),
+            };
+        })
 
         selectedDayIndex = 0;
 
         // Video basierend auf Wetter
         if (dailyForecasts.length > 0) {
             const condition = dailyForecasts[0].weatherCondition;
-            const ts = Date.now();
 
             switch (condition) {
                 case "rain":
-                    backgroundVideo = `/videos/rain.mp4?ts=${ts}`;
+                    backgroundVideo = `/videos/rain.mp4`;
                     break;
                 case "clear":
-                    backgroundVideo = `/videos/clear.mp4?ts=${ts}`;
+                    backgroundVideo = `/videos/clear.mp4`;
                     break;
                 case "cloudy":
-                    backgroundVideo = `/videos/cloudy.mp4?ts=${ts}`;
+                    backgroundVideo = `/videos/cloudy.mp4`;
                     break;
                 case "snow":
-                    backgroundVideo = `/videos/snow.mp4?ts=${ts}`;
+                    backgroundVideo = `/videos/snow.mp4`;
                     break;
                 default:
                     backgroundVideo = "";
             }
-
-        }
         }
 
         // Carousel starten (nur nach vollständiger Verarbeitung!)
         startCarousel();
-
-
-
-
-    function getWeatherCondition(description) {
-        if (!description) return "default";
-
-        const desc = description
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^\w\s]/gi, "");
-
-        // ✅ Wichtige Reihenfolge: Regen vor bewölkt!
-        if (desc.includes("regen")) return "rain";
-        if (desc.includes("schnee")) return "snow";
-        if (desc.includes("gewitter") || desc.includes("sturm") || desc.includes("donner")) return "storm";
-        if (desc.includes("nebel") || desc.includes("dunst")) return "fog";
-        if (desc.includes("klar") || desc.includes("sonnig") || desc.includes("himmel")) return "clear";
-        if (desc.includes("wolke") || desc.includes("bewolkt") || desc.includes("bedeckt")) return "cloudy";
-
-        return "default";
     }
-
-
-
-
-
 
     // Format date to display full date
     function formatDate(date) {
@@ -309,38 +176,6 @@
             month: "long",
             day: "numeric",
         });
-    }
-
-    function formatDay(date) {
-        return new Date(date).toLocaleDateString("de-DE", {weekday: "long"});
-    }
-
-    function formatTime(dateString) {
-        return new Date(dateString).toLocaleTimeString("de-DE", {hour: "2-digit", minute: "2-digit"});
-    }
-
-    // Get weather icon URL
-    function getWeatherIconUrl(iconCode) {
-        if (!iconCode) return "";
-        if (iconCode.includes('n')) {
-            switch (iconCode) {
-                case '01n':
-                    return `https://openweathermap.org/img/wn/01d@2x.png`;
-                case '02n':
-                    return `https://openweathermap.org/img/wn/02d@2x.png`;
-                case '03n':
-                    return `https://openweathermap.org/img/wn/03d@2x.png`;
-                case '04n':
-                    return `https://openweathermap.org/img/wn/02d@2x.png`;
-                case '10n':
-                    return `https://openweathermap.org/img/wn/10d@2x.png`;
-            }
-        }
-        if (iconCode === '04d') {
-            return `https://openweathermap.org/img/wn/02d@2x.png`;
-        }
-        return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
-
     }
 
     // Get background gradient based on time and weather
@@ -376,14 +211,13 @@
 
     function setupSpeechRecognition() {
         if (typeof window === 'undefined' || !('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-            if ('SpeechRecognition' in window ) {
+            if ('SpeechRecognition' in window) {
                 console.log("SpeechRecognition")
             } else {
                 console.log("webkitSpeechRecognition")
             }
             console.warn("Speech Recognition API nicht im Browser unterstützt.");
             error = "Spracherkennung wird von Ihrem Browser nicht unterstützt.";
-            // isListening bleibt false, keine Endlosschleife versuchen
             isListening = false;
             return;
         }
@@ -402,10 +236,10 @@
                 console.log("Speech recognition ended.");
                 const wasRecording = isRecording;
                 isRecording = false;
-                if (isListening && wasRecording && isSocketConnected && recognition) { // Nur neu starten, wenn es gewünscht ist UND es vorher lief
+                if (isListening && wasRecording && isSocketConnected && recognition) {
                     setTimeout(() => {
                         try {
-                            if (isListening && recognition && !isRecording) { // Erneute Prüfung
+                            if (isListening && recognition && !isRecording) {
                                 console.log("Restarting recognition from onend...");
                                 recognition.start();
                             }
@@ -415,7 +249,7 @@
                                 // Vielleicht war es schon wieder gestartet, ignoriere oder logge nur
                             } else {
                                 // Andere Fehler behandeln
-                                isListening = false; // Im Zweifel das Lauschen stoppen
+                                isListening = false;
                             }
                         }
                     }, 300);
@@ -424,7 +258,6 @@
 
             recognition.onresult = (event) => {
                 let transcript = "";
-                // Gehe durch alle Ergebnisse (obwohl continuous=false meist nur eines hat)
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
                         transcript += event.results[i][0].transcript;
@@ -447,31 +280,28 @@
             recognition.onerror = (event) => {
                 console.error("Speech recognition error:", event.error, "Message:", event.message);
                 isRecording = false;
-                voicePrompt = "Fehler bei der Spracherkennung.";
                 if (event.error !== 'no-speech' && event.error !== 'aborted') {
                     error = `Spracherkennungsfehler: ${event.error}. ${event.message || ''}`;
-
                 }
-                // Bei bestimmten Fehlern (z.B. 'not-allowed', 'service-not-allowed') das Lauschen dauerhaft stoppen
+
                 if (['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(event.error)) {
-                    isListening = false; // Stoppt die Neustart-Schleife in onend
-                    if (recognition) recognition.abort(); // Versuche, es sauber zu stoppen
+                    isListening = false;
+                    if (recognition) recognition.abort();
                 } else if (isListening && isSocketConnected && recognition) {
-                    // Bei anderen Fehlern (z.B. 'no-speech') ggf. neu starten, wenn gewollt
                     setTimeout(() => {
                         if (isListening && recognition) recognition.start();
                     }, 1000);
                 }
             };
 
-            if (isListening) { // isListening wird in initWebSocket.onopen auf true gesetzt
+            if (isListening) {
                 console.log("Attempting to start initial speech recognition...");
                 recognition.start();
             }
         } catch (e) {
             console.error("Error setting up speech recognition:", e);
             error = "Fehler bei der Initialisierung der Spracherkennung.";
-            isListening = false; // Sicherstellen, dass es gestoppt ist
+            isListening = false;
         }
     }
 
@@ -481,12 +311,13 @@
             timestamp: new Date().toISOString(),
             message: "🔌 Starte WebSocket-Verbindung zur Sprach-KI …"
         }));
+
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
             console.log("WebSocket ist bereits offen oder verbindet sich.");
             return;
         }
 
-        if (socket) { // Wenn existiert aber nicht offen/connecting (z.B. closed, closing)
+        if (socket) {
             socket.onopen = null;
             socket.onmessage = null;
             socket.onclose = null;
@@ -501,7 +332,7 @@
             console.log('WebSocket to Python backend established.');
             isSocketConnected = true;
             error = null;
-            isListening = true; // Signal zum Starten der Spracherkennungsschleife
+            isListening = true;
             setupSpeechRecognition();
         };
 
@@ -513,20 +344,18 @@
                 if (data.type === 'command_understood_display_weather' && data.weatherPayload) {
                     weatherData = data.weatherPayload;
                     processWeatherData();
-                    // Stadtname wird durch processWeatherData gesetzt, falls in Daten vorhanden
                     city = (dailyForecasts.length > 0 && dailyForecasts[0].city) ? dailyForecasts[0].city : (data.city || "Unbekannt");
 
-                    // Optional: Kurz die Spracherkennung pausieren, um Echo zu vermeiden
                     if (recognition && isListening) {
                         let originalIsListeningState = isListening;
-                        isListening = false; // Pausiert den Neustart in onend
+                        isListening = false;
                         recognition.stop();
                         setTimeout(() => {
-                            isListening = originalIsListeningState; // Erlaube Neustart wieder
-                            if (isListening && isSocketConnected && recognition && !isRecording) { // Erneute Prüfung
+                            isListening = originalIsListeningState;
+                            if (isListening && isSocketConnected && recognition && !isRecording) {
                                 recognition.start();
                             }
-                        }, 2000); // 2 Sekunden Pause
+                        }, 2000);
                     }
 
                 } else if (data.type === 'no_action_needed') {
@@ -545,14 +374,9 @@
             isSocketConnected = false;
             isListening = false;
             if (recognition) {
-                recognition.onend = null; // Verhindere automatischen Neustart
+                recognition.onend = null;
                 recognition.stop();
             }
-            // Optional: reconnect logic (vorsichtig sein mit Endlosschleifen)
-            // if (event.code !== 1000) { // 1000 = Normal closure
-            //    console.log("Attempting to reconnect WebSocket in 5 seconds...");
-            //    setTimeout(initWebSocket, 5000);
-            // }
         };
 
         socket.onerror = (errorEvent) => {
@@ -567,30 +391,6 @@
         };
     }
 
-    /**
-     function parseVoiceCommand(command) {
-     // Extract city and days from command
-     const words = command.trim().split(/\s+/);
-     let newDays = 5;
-     let cityWords = [];
-
-     for (let i = 0; i < words.length; i++) {
-     const num = parseInt(words[i]);
-     if (!isNaN(num)) {
-     newDays = Math.min(Math.max(num, 1), 5); // Limit between 1-5
-     } else {
-     cityWords.push(words[i]);
-     }
-     }
-
-     const newCity = cityWords.join(" ").trim();
-     if (newCity) {
-     city = newCity;
-     days = newDays;
-     fetchWeatherData();
-     }
-     }*/
-
     function checkConnection() {
         isConnected = navigator.onLine;
         window.addEventListener('online', () => isConnected = true);
@@ -601,25 +401,20 @@
         });
     }
 
-    // Handle form submission
-    function handleSubmit(event) {
-        event.preventDefault();
-        fetchWeatherData(city);
-        showRecentSearches = false;
-    }
+    // Svelte 5 Effects
+    $effect(() => {
+        const firstLoad = localStorage.getItem('firstLoadDone');
+        if (!firstLoad) {
+            localStorage.setItem('firstLoadDone', 'true');
 
-    function selectDay(index) {
-        selectedDayIndex = index;
-    }
+            if (recognition) recognition.abort();
+            if (socket) socket.close();
 
-    // Select a recent search
-    function selectRecentSearch(searchTerm) {
-        city = searchTerm;
-        fetchWeatherData(searchTerm);
-        showRecentSearches = false;
-    }
-    onMount(() => {
-        // 🌐 Verbindung prüfen
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        }
+
         const savedSearches = localStorage.getItem("recentSearches");
         if (savedSearches) {
             recentSearches = JSON.parse(savedSearches);
@@ -630,11 +425,10 @@
 
         if (city) {
             fetchWeatherData(city).then(() => {
-                startCarousel(); // nur nach erfolgreichem Abruf starten
+                startCarousel();
             });
         }
 
-        // 🧹 Clean-up bei Zerstörung
         return () => {
             clearInterval(carouselInterval);
             console.log("App unmounting. Cleaning up resources.");
@@ -663,57 +457,31 @@
         };
     });
 
+    $effect(() => {
+        if (shouldStartCarousel) {
+            startCarousel();
+        }
 
-
-
-    // Animationsvariablen und -funktionen
-    function generateCloudStyle() {
-        const left = Math.random() * 120;
-        const bottom = Math.random() * 550 + 150;
-        const opacity = Math.random() * (0.8 - 0.4) + 0.4;
-        const scale = Math.random() * (1 - 0.4) + 0.4;
-        const animationDelay = Math.floor(Math.random() * 10); // Zufälliger Delay
-        const animationDuration = Math.random() * (30 - 15) + 15; // Zufällige Dauer
-        return {
-            left: `${left}%`,
-            bottom: `${bottom}px`,
-            opacity,
-            transform: `scale(${scale})`,
-            animationDelay: `${animationDelay}s`,
-            animationDuration: `${animationDuration}s`,
-            "--cloud-y": `${Math.random() * 10 - 5}`,
-            "--cloud-scale": `${scale}`,
-            "--cloud-opacity": `${opacity}`,
+        // Cleanup für Carousel
+        return () => {
+            if (carouselInterval) clearInterval(carouselInterval);
         };
-
-
-    }
+    });
 </script>
 
 <main>
-
-
-
-
     {#if backgroundVideo}
         {#key backgroundVideo}
-            <video
-                    autoplay
-                    muted
-                    loop
-                    playsinline
-                    class="background-video"
-            >
-                <source src={backgroundVideo} type="video/mp4" />
+            <video class="background-video" autoplay muted loop playsinline>
+                <source src={backgroundVideo} type="video/mp4"/>
             </video>
         {/key}
     {/if}
 
-
-
     {#if !isSocketConnected && error && (error.includes("WebSocket") || error.includes("Sprachserver getrennt"))}
         <div class="status-overlay error">
-            🔴 WebSocket nicht verbunden. Sprachsteuerung ist offline. {error.includes("versuche") ? error : "Versuche neu zu verbinden..."} <br/> Fehler: {error}
+            🔴 WebSocket nicht verbunden. Sprachsteuerung ist
+            offline. {error.includes("versuche") ? error : "Versuche neu zu verbinden..."} <br/> Fehler: {error}
         </div>
     {:else if !isConnected}
         <div class="status-overlay error">
@@ -722,28 +490,25 @@
     {/if}
 
     <div class="weather-app" style="background: {getBackgroundGradient(dailyForecasts[selectedDayIndex] || null)}">
-
-
-
         <div class="app-content-wrapper">
             <div class="app-header">
                 <h1>Wetter Vorhersage</h1>
                 {#if showVoiceHint}
                     <div class="voice-hint">
                         <div class="voice-hint-content">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                 stroke-linejoin="round">
                                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                                 <line x1="12" y1="19" x2="12" y2="23"></line>
                                 <line x1="8" y1="23" x2="16" y2="23"></line>
                             </svg>
-                            <span>Sage "{triggerWord} [Stadtname]" (z.B. "{triggerWord} Berlin")</span>
+                            <span>Sage "{TRIGGER_WORD} [Stadtname]" (z.B. "{TRIGGER_WORD} Berlin")</span>
                         </div>
-                        <button class="voice-hint-close" on:click={() => showVoiceHint = false} aria-label="Hinweis schließen">×</button>
+                        <button class="voice-hint-close" onclick={() => showVoiceHint = false}>×</button>
                     </div>
                 {/if}
-
-
             </div>
 
             {#if error && !error.includes("WebSocket") && !error.includes("Sprachserver")}
@@ -762,28 +527,22 @@
                 <!-- ANZEIGE VON WETTERDATEN (HEUTIGER TAG) -->
                 <div class="today-weather-card">
                     <div class="date">{formatDate(currentDay.date)}</div>
-                    <div class="city-name-display" style="font-size: 2.2rem; margin-bottom: 10px;">{currentDay.city}</div>
-
+                    <div class="city-name-display"
+                         style="font-size: 2.2rem; margin-bottom: 10px;">{currentDay.city}</div>
                     <div class="weather-info">
                         <div class="temperature-container">
                             <div class="current-temp" style="font-size: 3.5rem; margin-bottom: 5px;">
-                                {currentDay.forecasts && currentDay.forecasts.length > 0 && currentDay.forecasts[0].temperature !== undefined ?
-                                    Math.round(currentDay.forecasts[0].temperature) :
-                                    (currentDay.temperature !== undefined ? Math.round(currentDay.temperature) : '--')
-                                }°C
+                                {(currentDay.temperature !== undefined ? Math.round(currentDay.temperature) : '--')}°C
                             </div>
                             <div class="min-max">
-                                <span class="max">Max: {Math.round(currentDay.maxTemperature)}°C</span> / <span class="min">Min: {Math.round(currentDay.minTemperature)}°C</span>
+                                <span class="min">Min: {Math.round(currentDay.minTemperature)}°C</span> /
+                                <span class="max">Max: {Math.round(currentDay.maxTemperature)}°C</span>
                             </div>
                         </div>
-
                         <div class="weather-icon">
-                            <!-- <img src={getWeatherIconUrl(currentDay.iconCode)} alt={currentDay.description}/> -->
-
                             {#key currentDay.weatherCondition}
-                                <WeatherLottieIcon condition={currentDay.weatherCondition} />
+                                <WeatherLottieIcon condition={currentDay.weatherCondition}/>
                             {/key}
-
                             <div class="description">{currentDay.description}</div>
                         </div>
                     </div>
@@ -797,32 +556,27 @@
                 </div>
 
                 <!-- ANZEIGE DER KOMMENDEN TAGE ALS 3D-FLIP-CAROUSEL -->
-
-                {#if dailyForecasts.length > 4}<div class="next-days-header"> Kommende Tage</div>
-                    <Slider items={dailyForecasts.slice(1, 5)} formatDay={formatDay}/>
+                {#if dailyForecasts.length > 1}
+                    <div class="next-days-header">Kommende Tage</div>
+                    <Slider items={dailyForecasts.slice(1, dailyForecasts.length)}/>
                 {/if}
 
-
-            {:else if !loading && !error } <!-- Dieser 'else if' ist jetzt korrekt innerhalb des Haupt-Blocks -->
+            {:else if !loading && !error}
                 <div class="no-data">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
-                    <p>Keine Wetterdaten verfügbar. Bitte suchen Sie nach einer Stadt oder verwenden Sie die Sprachsteuerung (sage "{triggerWord} [Stadt]").</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                    </svg>
+                    <p>Keine Wetterdaten verfügbar. Bitte suchen Sie nach einer Stadt oder verwenden Sie die
+                        Sprachsteuerung (sage "{TRIGGER_WORD} [Stadt]").</p>
                 </div>
-            {/if} <!-- Schließt den {#if loading} ... {:else if ...} ... {:else if ...} Block -->
+            {/if}
 
         </div> <!-- Schließt app-content-wrapper -->
-
-
-
-
     </div> <!-- Schließt weather-app -->
-
-
-
 </main>
 
 <style>
-
     .background-video {
         position: fixed;
         top: 0;
@@ -831,7 +585,6 @@
         min-height: 100%;
         object-fit: cover;
         z-index: 1;
-
         pointer-events: none;
     }
 
@@ -846,14 +599,17 @@
         font-family: "Calibri", sans-serif;
         background-color: #2c3e50; /* Standard Dunkelblau/Grau */
     }
+
     :global(*) {
         box-sizing: border-box;
     }
+
     main {
         min-height: 100vh;
         display: flex;
         flex-direction: column;
     }
+
     /* Status-Overlays (aus "Aktuelles App.svelte", da nützlich) */
     .status-overlay {
         position: fixed;
@@ -893,7 +649,6 @@
         align-items: center;
     }
 
-
     .app-header {
         display: flex;
         justify-content: center;
@@ -902,11 +657,9 @@
         gap: 20px;
         flex-direction: column;
         width: 100%;
-        margin-top: 40px;     /* NEU */
-        margin-bottom: 40px;  /* statt 30px */
+        margin-top: 40px; /* NEU */
+        margin-bottom: 40px; /* statt 30px */
     }
-
-
 
     h1 { /* Aus "Faruk App.svelte" */
         margin: 0;
@@ -1068,9 +821,8 @@
 
     .recent-search-item:hover, .recent-search-item:focus {
         background-color: #f0f0f0;
-        outline: no
+        outline: none;
     }
-
 
     .today-weather-card {
         width: 100%;
@@ -1124,8 +876,6 @@
     .today-weather-card .weather-icon img {
         width: 115px; /* +15% von 100px */
         height: 115px;
-
-
     }
 
     .today-weather-card .temperature-container {
@@ -1168,8 +918,6 @@
         opacity: 0.8;
     }
 
-
-
     .next-days-header { /* Aus Aktuelles App.svelte, passt gut */
         font-size: 3.5rem;
         font-weight: 600;
@@ -1187,7 +935,6 @@
         flex-wrap: wrap; /* Erlaubt Umbruch bei Bedarf */
         justify-content: center; /* Zentriert die Karten, wenn sie umbrechen */
         gap: 20px; /* Abstand zwischen Karten */
-
         width: 100%;
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(10px);
@@ -1204,7 +951,6 @@
         background-color: white; /* Etwas transparenter */
         border-radius: 12px;
         padding: 15px;
-        /* margin-bottom: 20px; /* Entfernt, da gap im Flex-Container */
         backdrop-filter: blur(8px);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1246,11 +992,9 @@
     }
 
     .weather-card .min-max .max::after {
-
         opacity: 0.7;
         margin: 0 2px;
     }
-
 
     /* Allgemeine .min und .max Farben */
     .max, .max-temp {
@@ -1325,6 +1069,22 @@
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     }
 
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
     /* Media Queries für Responsiveness */
     @media (max-width: 768px) {
@@ -1383,7 +1143,6 @@
         .weather-card {
             width: 110px;
             padding: 12px;
-
         }
 
         /* Kleinere Karten */
