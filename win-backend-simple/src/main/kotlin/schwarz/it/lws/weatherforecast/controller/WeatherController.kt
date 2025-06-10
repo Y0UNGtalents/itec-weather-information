@@ -22,7 +22,7 @@ class WeatherController(private val weatherForecastService: WeatherForecastServi
         val fiveDayForecast = weatherForecastService.getFiveDayForecast(city)
         val dailyForecasts = fiveDayForecast.dailyForecasts.map { day ->
             DaySummaryDto(
-                city = city,
+                city = fiveDayForecast.city.name,
                 forecastDate = day.date.toString(),
                 minTemperature = day.minTemperature,
                 maxTemperature = day.maxTemperature,
