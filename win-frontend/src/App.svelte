@@ -41,10 +41,10 @@
         const map = {
             "01d": "clear",
             "01n": "clear",
-            "02d": "cloudy",
-            "02n": "cloudy",
-            "03d": "cloudy",
-            "03n": "cloudy",
+            "02d": "lightCloudy",
+            "02n": "lightCloudy",
+            "03d": "lightCloudy",
+            "03n": "lightCloudy",
             "04d": "cloudy",
             "04n": "cloudy",
             "09d": "rain",
@@ -86,13 +86,13 @@
         error = null;
 
         try {
-            console.log(`Fetching weather for: ${cityName}`);
+            console.log(`Fetching weather for: ${cityName}`); // FIX 1: Backticks
 
             const response = await fetch(`http://localhost:8080/api/weather/${cityName}`);
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`Wetterdaten für ${cityName} nicht gefunden (${response.status}): ${errorText || response.statusText}`);
+                throw new Error(`Wetterdaten für ${cityName} nicht gefunden (${response.status}): ${errorText || response.statusText}`); // FIX 1: Backticks
             }
 
             const newWeatherData = await response.json();
@@ -111,12 +111,31 @@
 
         } catch (err) {
             console.error("Error fetching weather data:", err);
-            error = `Error fetching weather data: ${err.message}`;
+            error = `Error fetching weather data: ${err.message}`; // FIX 1: Backticks
             weatherData = [];
             dailyForecasts = [];
         } finally {
             loading = false;
         }
+    }
+
+    function formatGermanWeatherDescription(description) {
+        const words = description.trim().toLowerCase().split(' ');
+
+        // Erstes Wort
+        if (words.length > 0) {
+            words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+        }
+
+        // Letztes Wort
+        if (words.length > 1) {
+            const lastIndex = words.length - 1;
+
+            words[lastIndex] = words[lastIndex].charAt(0).toUpperCase() + words[lastIndex].slice(1);
+        }
+
+        return words.join(' ');
+
     }
 
     // Process weather data to group by day
@@ -134,7 +153,7 @@
                 minTemperature: item.minTemperature,
                 maxTemperature: item.maxTemperature,
                 avgHumidity: item.humidity,
-                description: item.description,
+                description: formatGermanWeatherDescription(item.description),
                 iconCode: item.iconCode,
                 weatherCondition: getWeatherConditionFromIcon(item.iconCode),
             };
@@ -148,16 +167,19 @@
 
             switch (condition) {
                 case "rain":
-                    backgroundVideo = `/videos/rain.mp4`;
+                    backgroundVideo = "/videos/rain.mp4";
                     break;
                 case "clear":
-                    backgroundVideo = `/videos/clear.mp4`;
+                    backgroundVideo = "/videos/clear.mp4";
+                    break;
+                case "lightCloudy":
+                    backgroundVideo = "/videos/lightCloudy.mp4";
                     break;
                 case "cloudy":
-                    backgroundVideo = `/videos/cloudy.mp4`;
+                    backgroundVideo = "/videos/cloudy.mp4";
                     break;
                 case "snow":
-                    backgroundVideo = `/videos/snow.mp4`;
+                    backgroundVideo = "/videos/snow.mp4";
                     break;
                 default:
                     backgroundVideo = "";
@@ -196,6 +218,11 @@
             return isDay
                 ? "linear-gradient(to bottom, #757f9a, #d7dde8)"
                 : "linear-gradient(to bottom, #373b44, #4286f4)";
+        }
+        else if (condition === "lightCloudy") {
+                return isDay
+                    ? "linear-gradient(to bottom, #757f9a, #d7dde8)"
+                    : "linear-gradient(to bottom, #373b44, #4286f4)";
         } else if (condition === "rain") {
             return "linear-gradient(to bottom, #616161, #9bc5c3)";
         } else if (condition === "snow") {
@@ -281,7 +308,7 @@
                 console.error("Speech recognition error:", event.error, "Message:", event.message);
                 isRecording = false;
                 if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                    error = `Spracherkennungsfehler: ${event.error}. ${event.message || ''}`;
+                    error = `Spracherkennungsfehler: ${event.error}. ${event.message || ''}`; // FIX 1: Backticks
                 }
 
                 if (['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(event.error)) {
@@ -362,7 +389,7 @@
                     console.log("Python backend:", data.reason || "No action needed.");
                 } else if (data.type === 'error_from_python') {
                     console.error("Error from Python backend:", data.message);
-                    error = `Fehler vom Sprachserver: ${data.message}`;
+                    error = `Fehler vom Sprachserver: ${data.message}`; // FIX 1: Backticks
                 }
             } catch (e) {
                 console.error('Error parsing WebSocket message from Python backend:', e);
@@ -401,36 +428,23 @@
         });
     }
 
-    // Svelte 5 Effects
+    // Initial setup and lifecycle management
+    const savedSearches = localStorage.getItem("recentSearches");
+    if (savedSearches) {
+        recentSearches = JSON.parse(savedSearches);
+    }
+
+    // This effect runs once on component mount for initial setup
     $effect(() => {
-        const firstLoad = localStorage.getItem('firstLoadDone');
-        if (!firstLoad) {
-            localStorage.setItem('firstLoadDone', 'true');
-
-            if (recognition) recognition.abort();
-            if (socket) socket.close();
-
-            setTimeout(() => {
-                location.reload();
-            }, 3000);
-        }
-
-        const savedSearches = localStorage.getItem("recentSearches");
-        if (savedSearches) {
-            recentSearches = JSON.parse(savedSearches);
-        }
-
         checkConnection();
         initWebSocket();
 
         if (city) {
-            fetchWeatherData(city).then(() => {
-                startCarousel();
-            });
+            fetchWeatherData(city);
         }
 
+        // Cleanup for component unmount
         return () => {
-            clearInterval(carouselInterval);
             console.log("App unmounting. Cleaning up resources.");
             isListening = false;
 
@@ -457,12 +471,12 @@
         };
     });
 
+    // Effect for carousel management
     $effect(() => {
         if (shouldStartCarousel) {
             startCarousel();
         }
-
-        // Cleanup für Carousel
+        // Cleanup for carousel interval
         return () => {
             if (carouselInterval) clearInterval(carouselInterval);
         };
@@ -528,10 +542,10 @@
                 <div class="today-weather-card">
                     <div class="date">{formatDate(currentDay.date)}</div>
                     <div class="city-name-display"
-                         style="font-size: 2.2rem; margin-bottom: 10px;">{currentDay.city}</div>
+                         style="font-size: 2.4rem; margin-bottom: 10px;">{currentDay.city}</div>
                     <div class="weather-info">
                         <div class="temperature-container">
-                            <div class="current-temp" style="font-size: 3.5rem; margin-bottom: 5px;">
+                            <div class="current-temp" style="font-size: 4rem; margin-bottom: 5px;">
                                 {(currentDay.temperature !== undefined ? Math.round(currentDay.temperature) : '--')}°C
                             </div>
                             <div class="min-max">
@@ -549,8 +563,8 @@
 
                     <div class="details">
                         <div class="detail-item">
-                            <span class="label">Luftfeuchtigkeit:</span>
-                            <span class="value">{currentDay.avgHumidity}%</span>
+                            <span class="label">Luftfeuchtigkeit:&nbsp;</span>
+                            <span class="value"> {currentDay.avgHumidity}%</span>
                         </div>
                     </div>
                 </div>
@@ -598,6 +612,7 @@
         flex-direction: column; /* Besser als flex-wrap für Hauptbody */
         font-family: "Calibri", sans-serif;
         background-color: #2c3e50; /* Standard Dunkelblau/Grau */
+        max-width: 100%;
     }
 
     :global(*) {
@@ -630,7 +645,7 @@
 
     .weather-app { /* Hauptcontainer aus "Faruk App.svelte" */
         min-height: 100vh;
-        padding: 20px;
+
         transition: background 0.5s ease;
         color: black;
         display: flex;
@@ -647,6 +662,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        overflow: hidden;
+        padding-top: 5rem;
     }
 
     .app-header {
@@ -826,10 +843,11 @@
 
     .today-weather-card {
         width: 100%;
-        max-width: 690px; /* +15% von 600px */
+        max-width: 620px; /* +15% von 600px */
         font-size: 1.38rem; /* +15% von 1.2rem */
         text-align: center;
-        background-color: rgba(255, 255, 255, 0.7);
+        background-color: white;
+        opacity: 0.8;
         border-radius: 16px;
         padding: 23px 28px; /* +15% */
         margin: 0 auto 30px auto;
@@ -837,7 +855,7 @@
         transition: transform 0.2s;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-bottom: 60px;
+        margin-bottom: 100px;
     }
 
     .today-weather-card:hover {
@@ -862,15 +880,17 @@
         justify-content: center;
         align-items: center;
         text-align: center;
+        margin-left: 6rem;
     }
 
     .today-weather-card .weather-info {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 28px; /* +15% von 25px */
         margin-bottom: 17px;
         flex-wrap: wrap;
+        padding-top: 5px;
+        padding-bottom: 20px;
     }
 
     .today-weather-card .weather-icon img {
@@ -883,22 +903,22 @@
     }
 
     .today-weather-card .current-temp {
-        font-size: 4.03rem; /* +15% von 3.5rem */
+        font-size: 4rem; /* +15% von 3.5rem */
         font-weight: 300;
         line-height: 1;
-        margin: 0;
+        margin-top: 35px;
     }
 
     .today-weather-card .min-max {
-        font-size: 1.27rem; /* +15% von 1.1rem */
+        font-size: 1.4rem; /* +15% von 1.1rem */
         opacity: 0.9;
-        margin-top: 4px;
+        align-items: center;
+        margin-top: 25px;
     }
 
     .today-weather-card .description {
-        font-size: 2.19rem; /* +15% von 1.9rem */
-        margin-top: 11px;
-        text-transform: capitalize;
+        font-size: 1.4rem; /* +15% von 1.9rem */
+        margin-top: 5px;
     }
 
     .today-weather-card .details {
@@ -909,8 +929,8 @@
 
     .today-weather-card .detail-item {
         display: flex;
-        justify-content: space-between;
-        font-size: 2.19rem; /* +15% von 1.9rem */
+        justify-content: center;
+        font-size: 2rem; /* +15% von 1.9rem */
         margin-bottom: 6px;
     }
 
@@ -979,7 +999,7 @@
 
     .weather-card .description {
         font-size: 1.8em;
-        margin-top: 3px;
+        margin-top: 1px;
         opacity: 0.8;
         height: 2.4em;
         overflow: hidden;

@@ -17,6 +17,7 @@
             fog: '/lottie/fog.json',
             storm: '/lottie/rainStorm.json',
             clear: '/lottie/sun.json',
+            lightCloudy: '/lottie/lightCloudy.json',
         };
         return map[condition] || '/lottie/default.json';
     };
@@ -71,7 +72,7 @@
 
 <style>
     .weather-lottie-icon {
-        width: 120px;
+        width: 180px;
         height: 120px;
         display: flex;
         justify-content: center;
