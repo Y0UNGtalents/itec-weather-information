@@ -2,7 +2,9 @@ package schwarz.it.lws.weatherforecast.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import schwarz.it.lws.weatherforecast.controller.dto.DayTemperatureDto
 import schwarz.it.lws.weatherforecast.model.DailyForecast
+import schwarz.it.lws.weatherforecast.model.DayTemperature
 import schwarz.it.lws.weatherforecast.model.FiveDayForecast
 import schwarz.it.lws.weatherforecast.service.dto.WeatherEntry
 import java.time.Instant
@@ -85,6 +87,13 @@ class WeatherForecastService(
             windSpeed = entries[0].wind.speed
         }
 
+        val dayTemperatures = entries.map { entry ->
+            DayTemperature(
+                temperature = entry.main.temp,
+                forecastDate = entry.dt_txt
+            )
+        }
+
         return DailyForecast(
             date = date,
             temperature = temperature,
@@ -95,7 +104,7 @@ class WeatherForecastService(
             description = description,
             windSpeed = windSpeed, // Merke
             pressure = pressure,   // Merke
-
+            dayTemperatures = dayTemperatures
         )
     }
 
@@ -110,6 +119,7 @@ class WeatherForecastService(
             humidity = 0,
             iconCode = "01d",
             description = "Keine Daten verfügbar",
+            dayTemperatures = emptyList(),
         )
     }
 }

@@ -1,5 +1,12 @@
 package schwarz.it.lws.weatherforecast.controller.dto
 
+import schwarz.it.lws.weatherforecast.model.DailyForecast
+
+data class DayTemperatureDto(
+    val temperature: Double,
+    val forecastDate: String
+)
+
 data class DaySummaryDto(
     val city: String,
     val forecastDate: String,
@@ -11,7 +18,7 @@ data class DaySummaryDto(
     val humidity: Int,
     val pressure: Int,
     val windSpeed: Double,
-
+    val dayTemperatures: List<DayTemperatureDto>
 )
 
 data class ForecastsSummaryDto(

@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import schwarz.it.lws.weatherforecast.controller.dto.DaySummaryDto
+import schwarz.it.lws.weatherforecast.controller.dto.DayTemperatureDto
+import schwarz.it.lws.weatherforecast.model.DayTemperature
 import schwarz.it.lws.weatherforecast.service.WeatherForecastService
 import org.springframework.web.bind.annotation.CrossOrigin
 import schwarz.it.lws.weatherforecast.controller.dto.HourlyForecastDto
@@ -35,9 +37,14 @@ class WeatherController(private val weatherForecastService: WeatherForecastServi
                 humidity = day.humidity,
                 pressure = day.pressure,
                 windSpeed = day.windSpeed
+                dayTemperatures = day.dayTemperatures.map { day ->
+                    DayTemperatureDto(
+                        day.temperature,
+                        day.forecastDate
+                    )
+                }
             )
         }
-
         return ResponseEntity.ok(dailyForecasts)
     }
 
