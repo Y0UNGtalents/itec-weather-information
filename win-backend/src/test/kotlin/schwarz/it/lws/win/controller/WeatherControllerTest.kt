@@ -52,7 +52,9 @@ class WeatherControllerTest {
             maxTemperature = 22.0,
             humidity = 65,
             description = "Clear sky",
-            iconCode = "01d"
+            iconCode = "01d",
+            windSpeed = 10.0,
+            precipitation, 
         )
     )
 

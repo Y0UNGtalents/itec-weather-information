@@ -51,11 +51,16 @@ class WeatherService @Autowired constructor(
             val weather = forecastItem.weather.first()
             WeatherData(
                 city = response.city.name,
+                latitude = response.city.coord.latitude,
+                longitude = response.city.coord.longitude,
                 forecastDate = LocalDateTime.parse(forecastItem.dtTxt, dateTimeFormatter),
                 temperature = forecastItem.main.temp,
                 minTemperature = forecastItem.main.tempMin,
                 maxTemperature = forecastItem.main.tempMax,
                 humidity = forecastItem.main.humidity,
+                pressure = forecastItem.main.pressure,
+                windSpeed = forecast.main.wind.windSpeed * 3.6,
+                pop = forecastItem.pop,
                 description = weather.description,
                 iconCode = weather.icon
             )
@@ -160,7 +165,7 @@ class WeatherService @Autowired constructor(
         // Find min and max temperatures
         val minTemp = forecasts.minByOrNull { it.minTemperature }?.minTemperature?.let { (it * 100).toInt() / 100.0 } ?: 0.0
         val maxTemp = forecasts.maxByOrNull { it.maxTemperature }?.maxTemperature?.let { (it * 100).toInt() / 100.0 } ?: 0.0
-
+        
         // Find the most common description and icon
         val descriptionCounts = forecasts.groupBy { it.description }.mapValues { it.value.size }
         val mostCommonDescription = descriptionCounts.maxByOrNull { it.value }?.key ?: ""
