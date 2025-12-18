@@ -1,5 +1,7 @@
 <script>
     export let humidity; // Prop, die den Wert erhält
+    export let pressure;
+    export let windSpeed;
 </script>
 <main>
 
@@ -16,8 +18,8 @@
                     
                         <tr>
                             <td><span class="value">{humidity}%</span></td>
-                            <td><span class="value"> 1013 Pha</span></td>
-                            <td><span class="value"> 10 km/h</span></td>
+                            <td><span class="value">{pressure}hPa</span></td>
+                            <td><span class="value">{windSpeed}km/h</span></td>
                         </tr>
                     </thead>
                     

@@ -9,6 +9,8 @@
     // Props
     let dailyForecasts = $state([]);
 
+    
+
     // State variables - Svelte 5 style
     let backgroundVideo = $state("");
     let city = $state("Heilbronn");
@@ -28,6 +30,13 @@
     let isRecording = $state(false);
     let isListening = $state(false);
     let showVoiceHint = $state(true);
+
+    const morning_start = 7;
+    const morning_end = 9;
+    const sunset_start = 16;
+    const sunset_end = 17;
+    const night_start = 17;
+    const night_end = 7;
 
     // WebSocket
     let socket = $state(null);
@@ -78,6 +87,8 @@
             }, 4000);
         }
     }
+
+    
 
     // Function to fetch weather data
     async function fetchWeatherData(cityName) {
@@ -151,7 +162,8 @@
             mapUrl = "";
             return;
         }
-
+        
+        
         dailyForecasts = weatherData.map((item) => {
             return {
                 date: new Date(item.forecastDate),
@@ -163,7 +175,6 @@
                 description: item.description,
                 pressure: item.pressure, // Neu
                 windSpeed: item.windSpeed, // Neu
-                pop: item.pressure, // Neu
                 iconCode: item.iconCode,
                 weatherCondition: getWeatherConditionFromIcon(item.iconCode),
             };
@@ -171,14 +182,24 @@
 
         const currentCity = dailyForecasts[0].city;
         if (currentCity) {
-            mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(currentCity)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`;
+            mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(currentCity)}&t=&output=embed`;
+
         }
         selectedDayIndex = 0;
 
-        // Video basierend auf Wetter
-        if (dailyForecasts.length > 0) {
-            const condition = dailyForecasts[0].weatherCondition;
+        const currentHour = new Date().getHours();
+        const condition = dailyForecasts[0].weatherCondition;
 
+        if (currentHour >= night_start || currentHour <= night_end){
+            backgroundVideo = "/videos/Night.mp4";
+        }
+        else if (currentHour >= morning_start && currentHour < morning_end){
+            backgroundVideo = "/videos/sunset.mp4";
+        }
+        else if (currentHour >= sunset_start && currentHour < sunset_end){
+            backgroundVideo = "/videos/sunset.mp4";
+        }
+        else {
             switch (condition) {
                 case "rain":
                     backgroundVideo = "/videos/Regen.mp4";
@@ -196,13 +217,13 @@
                     backgroundVideo = "/videos/Snowy.mp4";
                     break;
                 default:
-                    backgroundVideo = "";
+                    backgroundVideo = "/videos/day.mp4";
             }
 
         
         if (dailyForecasts.length > 0) {
             const searchCity = dailyForecasts[0].city;
-            mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(searchCity)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`;
+            mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(currentCity)}&t=&output=embed`;
         }
         }
 
@@ -572,11 +593,19 @@
                         <Temp day={currentDay}/>
                     {/if}
 
-                <Luft humidity={currentDay.avgHumidity} />  
-                
+                <Luft humidity={currentDay.avgHumidity} pressure={currentDay.pressure} windSpeed={currentDay.windSpeed}/>  
+
                 <Hourly></Hourly>
 
-                <Map mapUrl={mapUrl} />
+                <div class="daily">Tägliche Vorhersage</div>
+
+                <div class="down">
+
+                    <Slider items={dailyForecasts.slice(1, dailyForecasts.length)}></Slider>
+
+                    <Map mapUrl={mapUrl} />
+
+                </div>
 
                 
 
@@ -627,6 +656,12 @@
         font-family: "Calibri", sans-serif;
         background-color: #2c3e50; /* Standard Dunkelblau/Grau */
         max-width: 100%;
+    }
+
+    .down{
+        display: flex;
+        flex-direction: row;
+        height:800px;
     }
 
     :global(*) {
@@ -878,6 +913,19 @@
         text-align: center;
         gap: 15px;
         padding: 20px;
+    }
+
+    .daily {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-left: 1em;
+        margin-top: 20px;
+        
+        padding: 4px 16px;
+        border-radius: 8px;
+        color: white;
+        
+            
     }
 
     .no-data svg {

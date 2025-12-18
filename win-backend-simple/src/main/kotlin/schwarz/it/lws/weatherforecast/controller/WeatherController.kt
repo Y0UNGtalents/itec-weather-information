@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import schwarz.it.lws.weatherforecast.controller.dto.DaySummaryDto
 import schwarz.it.lws.weatherforecast.service.WeatherForecastService
-
+import org.springframework.web.bind.annotation.CrossOrigin
+import schwarz.it.lws.weatherforecast.controller.dto.HourlyForecastDto
+import java.time.LocalDate
+ 
 @RestController
 @RequestMapping("/api/weather")
 @Validated
@@ -30,9 +33,12 @@ class WeatherController(private val weatherForecastService: WeatherForecastServi
                 iconCode = day.iconCode,
                 description = day.description,
                 humidity = day.humidity,
+                pressure = day.pressure,
+                windSpeed = day.windSpeed
             )
         }
 
         return ResponseEntity.ok(dailyForecasts)
     }
+
 }

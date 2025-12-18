@@ -65,10 +65,14 @@ class WeatherForecastService(
         val humidity: Int
         val iconCode: String
         val description: String
+        val pressure: Int
+        val windSpeed: Double
 
         val forcast12 = entries.find { it.dt_txt.endsWith("12:00:00") }
         if (forcast12 != null) {
             temperature = forcast12.main.temp
+            pressure = forcast12.main.pressure
+            windSpeed = forcast12.wind.speed
             humidity = forcast12.main.humidity
             description = forcast12.weather[0].description
             iconCode = forcast12.weather[0].icon
@@ -77,6 +81,8 @@ class WeatherForecastService(
             humidity = entries[0].main.humidity
             description = entries[0].weather[0].description
             iconCode = entries[0].weather[0].icon
+            pressure = entries[0].main.pressure
+            windSpeed = entries[0].wind.speed
         }
 
         return DailyForecast(
@@ -87,6 +93,9 @@ class WeatherForecastService(
             humidity = humidity,
             iconCode = iconCode,
             description = description,
+            windSpeed = windSpeed, // Merke
+            pressure = pressure,   // Merke
+
         )
     }
 
@@ -96,6 +105,8 @@ class WeatherForecastService(
             minTemperature = 0.0,
             maxTemperature = 0.0,
             temperature = 0.0,
+            windSpeed = 0.0,
+            pressure = 0,
             humidity = 0,
             iconCode = "01d",
             description = "Keine Daten verfügbar",

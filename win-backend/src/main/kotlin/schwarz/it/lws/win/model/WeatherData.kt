@@ -41,6 +41,12 @@ data class WeatherData(
     val iconCode: String,
 
     @Column(nullable = false)
+    val pressure: Int,
+
+    @Column(nullable = false)
+    val windSpeed: Double,
+
+    @Column(nullable = false)
     @CreationTimestamp
     val createdAt: LocalDateTime = LocalDateTime.now()
 )

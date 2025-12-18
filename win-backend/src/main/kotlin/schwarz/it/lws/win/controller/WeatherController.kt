@@ -41,5 +41,14 @@ class WeatherController(private val weatherService: WeatherService) {
         val weatherData = weatherService.getWeatherForecast(city, startDateTime, endDateTime)
         return ResponseEntity.ok(weatherData)
     }
+    
+    @GetMapping("/{city}/chart")
+    fun getWeatherForChart(
+        @PathVariable city: String,
+        @RequestParam(required = false, defaultValue = "de") lang: String
+    ) : ResponseEntity<List<WeatherData>> {
+        val data = weatherService.getFull3HourlyForecast(city, lang)
+        return ResponseEntity.ok(data)
+    }
 
 }
