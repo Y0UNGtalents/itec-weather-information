@@ -7,7 +7,7 @@
     export let currentIndex = 0;
     export let selectDay = (i) => {};
     export let formatDay = (date) =>
-        new Date(date).toLocaleDateString('de-DE', { weekday: 'short' });
+        new Date(date).toLocaleDateString('de-DE', { weekday: 'long' });
 
     let active = 1;
     let sliderContainer;
@@ -31,10 +31,10 @@
         let stt = 0;
         for (let i = active + 1; i < elements.length; i++) {
             stt++;
-            elements[i].style.transform = `translateX(${310 * stt}px) scale(${1 - 0.2 * stt}) perspective(32px) rotateY(-1deg)`;
+            elements[i].style.transform = `translateX(${3 * stt}px) scale(${1 - 0.2 * stt})`;
             elements[i].style.zIndex = -stt;
             elements[i].style.filter = 'blur(5px)';
-            elements[i].style.opacity = stt > 3 ? 0 : 0.6;
+            elements[i].style.opacity = stt > 0 ? 0 : 0;
             elements[i].style.left = `${centerOffset}px`;
         }
 
@@ -42,10 +42,10 @@
         stt = 0;
         for (let i = active - 1; i >= 0; i--) {
             stt++;
-            elements[i].style.transform = `translateX(${-330 * stt}px) scale(${1 - 0.2 * stt}) perspective(32px) rotateY(1deg)`;
+            elements[i].style.transform = `translateX(${-3 * stt}px) scale(${1 - 0.2 * stt})`;
             elements[i].style.zIndex = -stt;
             elements[i].style.filter = 'blur(5px)';
-            elements[i].style.opacity = stt > 6 ? 0 : 0.6;
+            elements[i].style.opacity = stt > 0 ? 0 : 0.0;
             elements[i].style.left = `${centerOffset}px`;
         }
     };
@@ -87,37 +87,43 @@
 
 <style>
     .flip-carousel {
+        margin-top: 2em;
         display: flex;
         justify-content: center;
         align-items: center;
         perspective: 1000px;
         position: relative;
-        height: 700px;
+        height: 300px;
         margin-bottom: 30px;
         transform-style: preserve-3d;
         transition: transform 1s linear;
-        max-width: 100%;
-
+        max-width: 40%;
+        margin-left: 18em;
     }
 
     .card {
-        width: 460px;
-        height: 620px;
+        width: 500px;
+        height: 400px;
         position: absolute;
         top: 0;
         left: 0;
-        transition: transform 1s ease, opacity 0.6s ease;
+        opacity: 0.3;
+        transition: transform 1s ease, opacity 0.2s ease;
         transform-style: preserve-3d;
-        background: rgba(255, 255, 255);
-        color: black;
-        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 60px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        
         display: flex;
-        overflow: hidden;
+        
         justify-content: center;
         align-items: center;
-        backdrop-filter: blur(5px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        padding: 20px;
+        
+        
     }
 
     .card .content {
@@ -130,30 +136,34 @@
     }
 
     .date {
-        font-size: 3rem;
+        font-size: 2rem;
         font-weight: 700;
-        margin-top: 20px;
-        margin-bottom: 15px;
+        padding-top: 20px;
+        
     }
 
     .weather-icon.small {
-        flex-grow: 1;
-        transform: scale(2.5);
-        margin-top: 150px;
-        padding-top: 15px;
+        flex-grow: 0.8;
+        transform: scale(0.8);
+        
+        
     }
 
+    
+
     .min-max {
-        font-size: 2.0rem;
+        font-size: 1.5rem;
         font-weight: bold;
-        margin-bottom: 24px;
+        
     }
 
     .description {
-        font-size: 2.5rem;
-        font-weight: 500;
+        font-size: 2.4rem;
+        font-weight: 700;
         opacity: 0.9;
-        margin-bottom: 20px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        
     }
 
     .max {

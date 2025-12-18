@@ -12,6 +12,8 @@ data class DailyForecast(
     val humidity: Int,
     val iconCode: String,
     val description: String,
+    val pressure: Int,
+    val windSpeed: Double,
     val dayTemperatures: List<DayTemperature>
 )
 
@@ -23,4 +25,6 @@ data class DayTemperature(
 data class FiveDayForecast(
     val city: City,
     val dailyForecasts: List<DailyForecast>,
+    
 )
+

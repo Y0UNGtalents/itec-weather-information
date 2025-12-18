@@ -59,7 +59,7 @@ class WeatherService @Autowired constructor(
                 maxTemperature = forecastItem.main.tempMax,
                 humidity = forecastItem.main.humidity,
                 pressure = forecastItem.main.pressure,
-                windSpeed = forecast.main.wind.windSpeed * 3.6,
+                windSpeed = forecast.main.wind.windSpeed,
                 pop = forecastItem.pop,
                 description = weather.description,
                 iconCode = weather.icon
@@ -165,7 +165,7 @@ class WeatherService @Autowired constructor(
         // Find min and max temperatures
         val minTemp = forecasts.minByOrNull { it.minTemperature }?.minTemperature?.let { (it * 100).toInt() / 100.0 } ?: 0.0
         val maxTemp = forecasts.maxByOrNull { it.maxTemperature }?.maxTemperature?.let { (it * 100).toInt() / 100.0 } ?: 0.0
-        
+
         // Find the most common description and icon
         val descriptionCounts = forecasts.groupBy { it.description }.mapValues { it.value.size }
         val mostCommonDescription = descriptionCounts.maxByOrNull { it.value }?.key ?: ""
@@ -205,5 +205,9 @@ class WeatherService @Autowired constructor(
     fun scheduledCleanup() {
         val deletedCount = deleteOldWeatherData()
         println("Scheduled cleanup completed: $deletedCount old weather records deleted")
+    }
+
+    fun getFull3HourlyForecast(city : String, lang: String = "de") : List<WeatherData> {
+        return getOrFetchWeatherForecast(city, lang)
     }
 }

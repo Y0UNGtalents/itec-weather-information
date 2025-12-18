@@ -85,7 +85,7 @@
     }
 
     .today-weather-card .city-name-display {
-        font-size: 2em;
+        font-size: 1.5em;
         font-weight: 600;
         margin-bottom: 4px;;
         text-align: left;
@@ -145,7 +145,7 @@
     
     }
     .min { 
-        color: #B694F5;
+        color: rgb(157, 95, 205);
         padding-top: 10px;
         text-align: left;
         

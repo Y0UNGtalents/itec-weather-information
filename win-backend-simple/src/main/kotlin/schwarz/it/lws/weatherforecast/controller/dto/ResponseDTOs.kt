@@ -16,6 +16,8 @@ data class DaySummaryDto(
     val iconCode: String,
     val description: String,
     val humidity: Int,
+    val pressure: Int,
+    val windSpeed: Double,
     val dayTemperatures: List<DayTemperatureDto>
 )
 
