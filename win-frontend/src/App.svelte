@@ -1,6 +1,10 @@
 <script>
     import WeatherLottieIcon from "./lib/WeatherLottieIcon.svelte";
     import Slider from "./lib/Slider.svelte";
+    import Temp from "./lib/Temp.svelte";
+    import Luft from "./lib/Luft.svelte";
+    import Hourly from "./lib/Hourly.svelte"
+    import Map from "./lib/Map.svelte";
 
     // Props
     let dailyForecasts = $state([]);
@@ -15,6 +19,8 @@
     let recentSearches = $state([]);
     let isConnected = $state(true);
     let isSocketConnected = $state(false);
+
+    let mapUrl = $state("");
 
     // Voice recognition variables
     let recognition = $state(null);
@@ -142,6 +148,7 @@
     function processWeatherData() {
         if (!weatherData || weatherData.length === 0) {
             dailyForecasts = [];
+            mapUrl = "";
             return;
         }
 
@@ -153,12 +160,19 @@
                 minTemperature: item.minTemperature,
                 maxTemperature: item.maxTemperature,
                 avgHumidity: item.humidity,
-                description: formatGermanWeatherDescription(item.description),
+                description: item.description,
+                pressure: item.pressure, // Neu
+                windSpeed: item.windSpeed, // Neu
+                pop: item.pressure, // Neu
                 iconCode: item.iconCode,
                 weatherCondition: getWeatherConditionFromIcon(item.iconCode),
             };
         })
 
+        const currentCity = dailyForecasts[0].city;
+        if (currentCity) {
+            mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(currentCity)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`;
+        }
         selectedDayIndex = 0;
 
         // Video basierend auf Wetter
@@ -167,23 +181,29 @@
 
             switch (condition) {
                 case "rain":
-                    backgroundVideo = "/videos/rain.mp4";
+                    backgroundVideo = "/videos/Regen.mp4";
                     break;
                 case "clear":
-                    backgroundVideo = "/videos/clear.mp4";
+                    backgroundVideo = "/videos/Clean.mp4";
                     break;
                 case "lightCloudy":
-                    backgroundVideo = "/videos/lightCloudy.mp4";
+                    backgroundVideo = "/videos/day.mp4";
                     break;
                 case "cloudy":
-                    backgroundVideo = "/videos/cloudy.mp4";
+                    backgroundVideo = "/videos/Clouds.mp4";
                     break;
                 case "snow":
-                    backgroundVideo = "/videos/snow.mp4";
+                    backgroundVideo = "/videos/Snowy.mp4";
                     break;
                 default:
                     backgroundVideo = "";
             }
+
+        
+        if (dailyForecasts.length > 0) {
+            const searchCity = dailyForecasts[0].city;
+            mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(searchCity)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`;
+        }
         }
 
         // Carousel starten (nur nach vollständiger Verarbeitung!)
@@ -484,6 +504,10 @@
 </script>
 
 <main>
+    {#if dailyForecasts.length > 0 && dailyForecasts[selectedDayIndex]}
+    {@const currentDay = dailyForecasts[selectedDayIndex]}
+
+
     {#if backgroundVideo}
         {#key backgroundVideo}
             <video class="background-video" autoplay muted loop playsinline>
@@ -503,10 +527,12 @@
         </div>
     {/if}
 
+    
+
     <div class="weather-app" style="background: {getBackgroundGradient(dailyForecasts[selectedDayIndex] || null)}">
         <div class="app-content-wrapper">
             <div class="app-header">
-                <h1>Wetter Vorhersage</h1>
+                <h1>Wetter</h1>
                 {#if showVoiceHint}
                     <div class="voice-hint">
                         <div class="voice-hint-content">
@@ -522,6 +548,8 @@
                         </div>
                         <button class="voice-hint-close" onclick={() => showVoiceHint = false}>×</button>
                     </div>
+
+                    
                 {/if}
             </div>
 
@@ -539,41 +567,18 @@
                 {@const currentDay = dailyForecasts[selectedDayIndex]}
 
                 <!-- ANZEIGE VON WETTERDATEN (HEUTIGER TAG) -->
-                <div class="today-weather-card">
-                    <div class="date">{formatDate(currentDay.date)}</div>
-                    <div class="city-name-display"
-                         style="font-size: 2.4rem; margin-bottom: 10px;">{currentDay.city}</div>
-                    <div class="weather-info">
-                        <div class="temperature-container">
-                            <div class="current-temp" style="font-size: 4rem; margin-bottom: 5px;">
-                                {(currentDay.temperature !== undefined ? Math.round(currentDay.temperature) : '--')}°C
-                            </div>
-                            <div class="min-max">
-                                <span class="min">Min: {Math.round(currentDay.minTemperature)}°C</span> /
-                                <span class="max">Max: {Math.round(currentDay.maxTemperature)}°C</span>
-                            </div>
-                        </div>
-                        <div class="weather-icon">
-                            {#key currentDay.weatherCondition}
-                                <WeatherLottieIcon condition={currentDay.weatherCondition}/>
-                            {/key}
-                            <div class="description">{currentDay.description}</div>
-                        </div>
-                    </div>
+                    {#if dailyForecasts.length > 0 && dailyForecasts[selectedDayIndex]}
+                        {@const currentDay = dailyForecasts[selectedDayIndex]}
+                        <Temp day={currentDay}/>
+                    {/if}
 
-                    <div class="details">
-                        <div class="detail-item">
-                            <span class="label">Luftfeuchtigkeit:&nbsp;</span>
-                            <span class="value"> {currentDay.avgHumidity}%</span>
-                        </div>
-                    </div>
-                </div>
+                <Luft humidity={currentDay.avgHumidity} />  
+                
+                <Hourly></Hourly>
 
-                <!-- ANZEIGE DER KOMMENDEN TAGE ALS 3D-FLIP-CAROUSEL -->
-                {#if dailyForecasts.length > 1}
-                    <div class="next-days-header">Kommende Tage</div>
-                    <Slider items={dailyForecasts.slice(1, dailyForecasts.length)}/>
-                {/if}
+                <Map mapUrl={mapUrl} />
+
+                
 
             {:else if !loading && !error}
                 <div class="no-data">
@@ -586,8 +591,13 @@
                 </div>
             {/if}
 
+
+            
+
+            
         </div> <!-- Schließt app-content-wrapper -->
     </div> <!-- Schließt weather-app -->
+    {/if}
 </main>
 
 <style>
@@ -600,6 +610,10 @@
         object-fit: cover;
         z-index: 1;
         pointer-events: none;
+    }
+
+    .map-container iframe{
+        display: block;
     }
 
     /* Globale Stile & Resets aus "Faruk App.svelte" */
@@ -632,7 +646,7 @@
         left: 0;
         width: 100%;
         padding: 10px 20px;
-        text-align: center;
+        
         z-index: 2000;
         color: white;
         font-size: 0.9rem;
@@ -650,7 +664,7 @@
         color: black;
         display: flex;
         flex-direction: column;
-        align-items: center; /* Zentriert .app-content-wrapper */
+        
         flex-grow: 1;
     }
 
@@ -661,7 +675,7 @@
         position: relative;
         display: flex;
         flex-direction: column;
-        align-items: center;
+        
         overflow: hidden;
         padding-top: 5rem;
     }
@@ -674,35 +688,37 @@
         gap: 20px;
         flex-direction: column;
         width: 100%;
-        margin-top: 40px; /* NEU */
-        margin-bottom: 40px; /* statt 30px */
+         /* NEU */
+        margin-bottom: 60px; /* statt 30px */
     }
 
     h1 { /* Aus "Faruk App.svelte" */
         margin: 0;
         font-size: 3.5rem;
         font-weight: 700;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        color: White;
         text-align: center;
-        display: inline-block;
+        background-color: transparent;
         padding: 4px 16px;
-        border-radius: 8px;
-        background-color: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(4px);
+        
     }
 
     .voice-hint { /* Aus "Faruk App.svelte" mit Anpassungen */
         font-size: 1.1rem;
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 60px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
         padding: 12px 18px;
         margin-top: 10px;
         margin-bottom: 15px;
         display: inline-flex;
         align-items: center;
         justify-content: space-between;
-        backdrop-filter: blur(5px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        
         animation: fadeIn 0.5s ease-out;
     }
 
@@ -735,208 +751,7 @@
         opacity: 1;
     }
 
-    .search-container { /* Aus "Faruk App.svelte" */
-        position: relative;
-        width: 100%;
-        max-width: 450px;
-        margin: 0 auto; /* Zentriert, wenn .app-header text-align:center hat */
-    }
-
-    .search-form { /* Aus "Aktuelles App.svelte", da es einen submit button hat */
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .input-wrapper { /* Aus "Faruk App.svelte" */
-        position: relative;
-        flex-grow: 1; /* Nimmt verfügbaren Platz */
-    }
-
-    .input-wrapper.listening .city-input { /* Aus "Faruk App.svelte" für den pulsierenden Effekt */
-        /* animation: pulse 1.5s infinite; // Kann bleiben, oder durch .recording-status ersetzt werden */
-        border-color: rgba(255, 100, 100, 0.7);
-    }
-
-    .city-input { /* Aus "Faruk App.svelte" */
-        font-size: 1.8rem; /* Etwas größer für Faruk-Stil */
-        padding: 10px 15px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 25px;
-        width: 100%; /* Passt sich an .input-wrapper an */
-        background-color: rgba(255, 255, 255, 0.1);
-        color: white;
-        backdrop-filter: blur(8px);
-        transition: all 0.3s ease;
-        text-align: center;
-        height: 48px;
-    }
-
-    .city-input::placeholder {
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .city-input:focus {
-        outline: none;
-        background-color: rgba(255, 255, 255, 0.15);
-        border-color: rgba(255, 255, 255, 0.5);
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
-    }
-
-    .search-button { /* Aus "Aktuelles App.svelte" */
-        padding: 10px;
-        background-color: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 48px;
-        height: 48px;
-        flex-shrink: 0;
-    }
-
-    .search-button:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-        transform: scale(1.05);
-    }
-
-    .search-button svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .recent-searches { /* Aus "Aktuelles App.svelte" */
-        position: absolute;
-        top: calc(100% + 5px);
-        left: 0;
-        right: 0;
-        background-color: #fff;
-        color: #333;
-        border-radius: 8px;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        z-index: 100;
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-    }
-
-    .recent-search-item {
-        padding: 10px 15px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        border-bottom: 1px solid #eee;
-        font-size: 0.95rem;
-    }
-
-    .recent-search-item:last-child {
-        border-bottom: none;
-    }
-
-    .recent-search-item:hover, .recent-search-item:focus {
-        background-color: #f0f0f0;
-        outline: none;
-    }
-
-    .today-weather-card {
-        width: 100%;
-        max-width: 620px; /* +15% von 600px */
-        font-size: 1.38rem; /* +15% von 1.2rem */
-        text-align: center;
-        background-color: white;
-        opacity: 0.8;
-        border-radius: 16px;
-        padding: 23px 28px; /* +15% */
-        margin: 0 auto 30px auto;
-        backdrop-filter: blur(10px);
-        transition: transform 0.2s;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-bottom: 100px;
-    }
-
-    .today-weather-card:hover {
-        transform: translateY(-5px);
-    }
-
-    .today-weather-card .date {
-        font-size: 2.19rem; /* +15% von 1.9rem */
-        margin-bottom: 9px;
-        opacity: 0.8;
-    }
-
-    .today-weather-card .city-name-display {
-        font-size: 2.53rem; /* +15% von 2.2rem */
-        font-weight: 600;
-        margin-bottom: 17px;
-    }
-
-    .weather-icon {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        margin-left: 6rem;
-    }
-
-    .today-weather-card .weather-info {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 17px;
-        flex-wrap: wrap;
-        padding-top: 5px;
-        padding-bottom: 20px;
-    }
-
-    .today-weather-card .weather-icon img {
-        width: 115px; /* +15% von 100px */
-        height: 115px;
-    }
-
-    .today-weather-card .temperature-container {
-        text-align: left;
-    }
-
-    .today-weather-card .current-temp {
-        font-size: 4rem; /* +15% von 3.5rem */
-        font-weight: 300;
-        line-height: 1;
-        margin-top: 35px;
-    }
-
-    .today-weather-card .min-max {
-        font-size: 1.4rem; /* +15% von 1.1rem */
-        opacity: 0.9;
-        align-items: center;
-        margin-top: 25px;
-    }
-
-    .today-weather-card .description {
-        font-size: 1.4rem; /* +15% von 1.9rem */
-        margin-top: 5px;
-    }
-
-    .today-weather-card .details {
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding-top: 14px;
-        margin-top: 17px;
-    }
-
-    .today-weather-card .detail-item {
-        display: flex;
-        justify-content: center;
-        font-size: 2rem; /* +15% von 1.9rem */
-        margin-bottom: 6px;
-    }
-
-    .today-weather-card .detail-item .label {
-        opacity: 0.8;
-    }
+    
 
     .next-days-header { /* Aus Aktuelles App.svelte, passt gut */
         font-size: 3.5rem;
@@ -1131,6 +946,7 @@
 
         h1 {
             font-size: 2.8rem;
+            padding-top: 20em;
         }
     }
 
@@ -1170,5 +986,32 @@
             width: 35px;
             height: 35px;
         }
+    }
+
+    .city{
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        font-weight: bold;
+        font-size: 40px;
+        margin-right:20em;
+        text-align: start;
+        color: white;
+    }
+
+    .uhr{
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        font-weight: bold;
+        font-size: 20px;
+        margin-right:20em;
+        text-align: start;
+        color: white;
+    }
+
+    .temp{
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        font-weight: bold;
+        font-size: 120px;
+        margin-right:2em;
+        text-align: start;
+        color: white;
     }
 </style>

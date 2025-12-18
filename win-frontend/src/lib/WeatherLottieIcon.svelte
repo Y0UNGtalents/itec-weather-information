@@ -72,8 +72,8 @@
 
 <style>
     .weather-lottie-icon {
-        width: 180px;
-        height: 120px;
+        width: 200px;
+        height: 200px;
         display: flex;
         justify-content: center;
         align-items: center;
