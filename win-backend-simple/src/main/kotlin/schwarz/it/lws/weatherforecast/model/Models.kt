@@ -1,5 +1,6 @@
 package schwarz.it.lws.weatherforecast.model
 
+import schwarz.it.lws.weatherforecast.controller.dto.DayTemperatureDto
 import schwarz.it.lws.weatherforecast.service.dto.City
 import java.time.LocalDate
 
@@ -11,6 +12,12 @@ data class DailyForecast(
     val humidity: Int,
     val iconCode: String,
     val description: String,
+    val dayTemperatures: List<DayTemperature>
+)
+
+data class DayTemperature(
+    val temperature: Double,
+    val forecastDate: String
 )
 
 data class FiveDayForecast(
