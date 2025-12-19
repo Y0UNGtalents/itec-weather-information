@@ -74,7 +74,7 @@ class WeatherForecastService(
         if (forcast12 != null) {
             temperature = forcast12.main.temp
             pressure = forcast12.main.pressure
-            windSpeed = forcast12.wind.speed
+            windSpeed = forcast12.wind.speed 
             humidity = forcast12.main.humidity
             description = forcast12.weather[0].description
             iconCode = forcast12.weather[0].icon
@@ -102,8 +102,8 @@ class WeatherForecastService(
             humidity = humidity,
             iconCode = iconCode,
             description = description,
-            windSpeed = windSpeed, // Merke
-            pressure = pressure,   // Merke
+            windSpeed = windSpeed * 3.6,
+            pressure = pressure,
             dayTemperatures = dayTemperatures
         )
     }

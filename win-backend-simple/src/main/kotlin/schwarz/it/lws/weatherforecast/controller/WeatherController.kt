@@ -11,7 +11,7 @@ import schwarz.it.lws.weatherforecast.controller.dto.DayTemperatureDto
 import schwarz.it.lws.weatherforecast.model.DayTemperature
 import schwarz.it.lws.weatherforecast.service.WeatherForecastService
 import org.springframework.web.bind.annotation.CrossOrigin
-import schwarz.it.lws.weatherforecast.controller.dto.HourlyForecastDto
+
 import java.time.LocalDate
  
 @RestController
@@ -36,7 +36,7 @@ class WeatherController(private val weatherForecastService: WeatherForecastServi
                 description = day.description,
                 humidity = day.humidity,
                 pressure = day.pressure,
-                windSpeed = day.windSpeed
+                windSpeed = day.windSpeed,
                 dayTemperatures = day.dayTemperatures.map { day ->
                     DayTemperatureDto(
                         day.temperature,

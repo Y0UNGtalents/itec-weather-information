@@ -19,7 +19,7 @@
                         <tr>
                             <td><span class="value">{humidity}%</span></td>
                             <td><span class="value">{pressure}hPa</span></td>
-                            <td><span class="value">{windSpeed}km/h</span></td>
+                            <td><span class="value">{Math.round(windSpeed)}km/h</span></td>
                         </tr>
                     </thead>
                     
@@ -42,9 +42,9 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             padding-top: 14px;
             
-            width: 90%;
+            width: 93%;
             height: 12em;
-            margin-left: 2.5em;
+            margin-left: 2em;
             
             
         }

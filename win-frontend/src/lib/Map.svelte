@@ -19,7 +19,7 @@
             <iframe
                 title="Google Maps Stadtansicht"
                 width="450px"
-                height="500"
+                height="400"
                 src={mapUrl}
                 style="border:0;"
                 loading="lazy"
@@ -54,10 +54,10 @@
     
 
     .map-container {
-        margin-top: 20px;
+        margin-top: 30px;
         overflow: hidden;
         border-radius: 60px;
-        margin-left: 10em;
+        margin-left: 18em;
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
