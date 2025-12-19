@@ -18,6 +18,7 @@
             storm: '/lottie/rainStorm.json',
             clear: '/lottie/sun.json',
             lightCloudy: '/lottie/lightCloudy.json',
+            midcloudy: '/lottie/lightCloudy.json'
         };
         return map[condition] || '/lottie/default.json';
     };

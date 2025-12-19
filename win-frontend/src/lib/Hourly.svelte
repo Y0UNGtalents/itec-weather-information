@@ -1,11 +1,14 @@
 <script>
-
+    import LineChart from './chart/LineChart.svelte';
+    export let dayTemperatures = [];
 </script>
 
 <main>
     <div class="next-days-header">Stündliche Vorhersage</div>
 
-    <div class="hourly-forecast"></div>
+    <div class="hourly-forecast">
+        <LineChart {dayTemperatures} />
+    </div>
 </main>
 
 <style>
@@ -16,7 +19,7 @@
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            width: 90%;
+            width: 93%;
             height: 20em;
             margin-left: 2em;
             margin-top: 1em;

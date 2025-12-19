@@ -58,14 +58,14 @@
             "01n": "clear",
             "02d": "lightCloudy",
             "02n": "lightCloudy",
-            "03d": "lightCloudy",
-            "03n": "lightCloudy",
+            "03d": "midcloudy",
+            "03n": "midcloudy",
             "04d": "cloudy",
             "04n": "cloudy",
             "09d": "rain",
             "09n": "rain",
-            "10d": "rain",
-            "10n": "rain",
+            "10d": "lightrain",
+            "10n": "lightrain",
             "11d": "storm",
             "11n": "storm",
             "13d": "snow",
@@ -173,13 +173,20 @@
                 maxTemperature: item.maxTemperature,
                 avgHumidity: item.humidity,
                 description: item.description,
-                pressure: item.pressure, // Neu
-                windSpeed: item.windSpeed, // Neu
+                pressure: item.pressure,
+                windSpeed: item.windSpeed,
                 iconCode: item.iconCode,
                 weatherCondition: getWeatherConditionFromIcon(item.iconCode),
+                // Neu (Stündliche)
+                dayTemperatures: item.dayTemperatures ? item.dayTemperatures.map((day) => {
+                    return {
+                        temp: day.temperature,
+                        time: new Date(day.forecastDate)
+                    };
+                }) : []
             };
-        })
-
+        });
+    
         const currentCity = dailyForecasts[0].city;
         if (currentCity) {
             mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(currentCity)}&t=&output=embed`;
@@ -215,6 +222,12 @@
                     break;
                 case "snow":
                     backgroundVideo = "/videos/Snowy.mp4";
+                    break;
+                case "midcloudy":
+                    backgroundVideo = "/videos/midcloud.mp4";
+                    break;
+                case "lightrain":
+                    backgroundVideo = "/videos/taube.mp4";
                     break;
                 default:
                     backgroundVideo = "/videos/day.mp4";
@@ -595,7 +608,8 @@
 
                 <Luft humidity={currentDay.avgHumidity} pressure={currentDay.pressure} windSpeed={currentDay.windSpeed}/>  
 
-                <Hourly></Hourly>
+                <Hourly dayTemperatures={currentDay.dayTemperatures} />
+
 
                 <div class="daily">Tägliche Vorhersage</div>
 

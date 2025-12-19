@@ -59,7 +59,7 @@ class WeatherService @Autowired constructor(
                 maxTemperature = forecastItem.main.tempMax,
                 humidity = forecastItem.main.humidity,
                 pressure = forecastItem.main.pressure,
-                windSpeed = forecast.main.wind.windSpeed,
+                windSpeed = forecast.main.wind.windSpeed * 3.6,
                 pop = forecastItem.pop,
                 description = weather.description,
                 iconCode = weather.icon
