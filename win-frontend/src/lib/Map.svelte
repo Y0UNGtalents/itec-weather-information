@@ -31,7 +31,7 @@
         margin-top: 2em;
         overflow: hidden;
         border-radius: 60px;
-        margin-left: 18em;
+        margin-left: 14em;
         border: 1px solid rgba(255, 255, 255, 0.3);
         position: relative;
     }
