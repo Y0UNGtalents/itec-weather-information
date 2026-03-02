@@ -1,47 +1,10 @@
 version: '3.8'
 
 services:
-  # Win Backend (Kotlin Spring Boot)
-  win-backend:
-    build:
-      context: ./win-backend-simple
-      dockerfile: Dockerfile
-    container_name: win-backend
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY}
-    ports:
-      - "8080:8080"
-    networks:
-      - win-network
-
-  # Python Backend (FastAPI)
-  python-backend:
-    build:
-      context: ./python-backend
-      dockerfile: Dockerfile
-    container_name: python-backend
-    ports:
-      - "8765:8765"
-    networks:
-      - win-network
-    command: python main.py
-
-  # Win Frontend (Svelte)
   win-frontend:
     build:
       context: ./win-frontend
       dockerfile: Dockerfile
     container_name: win-frontend
-    depends_on:
-      - win-backend
-      - python-backend
     ports:
       - "80:80"
-    networks:
-      - win-network
-
-networks:
-  win-network:
-    driver: bridge
-

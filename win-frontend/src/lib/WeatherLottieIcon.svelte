@@ -1,16 +1,14 @@
 <script>
     import lottie from 'lottie-web';
 
-    // Props
     let { condition } = $props();
 
-    // State
     let container = $state(null);
-    let animation = $state(null);
-    let currentCondition = $state('');
+    let animation = null;
+    let currentCondition = '';
 
-    const getLottieFile = (condition) => {
-        const map = {
+    function getLottieFile(weatherCondition) {
+        const conditionToFile = {
             rain: '/lottie/rain.json',
             snow: '/lottie/snow.json',
             cloudy: '/lottie/cloudSun.json',
@@ -20,11 +18,10 @@
             lightCloudy: '/lottie/lightCloudy.json',
             midcloudy: '/lottie/lightCloudy.json'
         };
-        return map[condition] || '/lottie/default.json';
-    };
+        return conditionToFile[weatherCondition] || '/lottie/default.json';
+    }
 
     function loadAnimation() {
-        // Prevent multiple calls
         if (!container || !condition || currentCondition === condition) {
             return;
         }
@@ -42,22 +39,18 @@
                 autoplay: true,
                 path: getLottieFile(condition),
             });
-
             currentCondition = condition;
-        } catch (error) {
-            console.error('Lottie error:', error);
+        } catch (err) {
+            console.error('Lottie error:', err);
         }
     }
 
-    // Single effect with all logic
     $effect(() => {
         if (container && condition && currentCondition !== condition) {
-            // Small delay to ensure DOM is ready
             const timeout = setTimeout(() => {
                 loadAnimation();
             }, 100);
 
-            // Cleanup
             return () => {
                 clearTimeout(timeout);
                 if (animation) {

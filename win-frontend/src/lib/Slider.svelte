@@ -2,71 +2,67 @@
     import { onMount } from 'svelte';
     import WeatherLottieIcon from './WeatherLottieIcon.svelte';
 
-    export let items = [];
+    let { items = [] } = $props();
 
-    export let currentIndex = 0;
-    export let selectDay = (i) => {};
-    export let formatDay = (date) =>
-        new Date(date).toLocaleDateString('de-DE', { weekday: 'long' });
+    function formatDay(date) {
+        return new Date(date).toLocaleDateString('de-DE', { weekday: 'long' });
+    }
 
-    let active = 1;
+    let activeIndex = 1;
     let sliderContainer;
     let interval;
-    let elements = [];
-    const loadShow = () => {
-        if (!elements[active]) return;
+    let cardElements = [];
+
+    function updateCardPositions() {
+        if (!cardElements[activeIndex]) return;
 
         const containerWidth = sliderContainer.offsetWidth;
-        const cardWidth = elements[active].offsetWidth;
+        const cardWidth = cardElements[activeIndex].offsetWidth;
         const centerOffset = (containerWidth - cardWidth) / 2;
 
-        // Zentrale Karte
-        elements[active].style.transform = 'none';
-        elements[active].style.zIndex = 100;
-        elements[active].style.filter = 'none';
-        elements[active].style.opacity = 1;
-        elements[active].style.left = `${centerOffset}px`;
+        cardElements[activeIndex].style.transform = 'none';
+        cardElements[activeIndex].style.zIndex = 100;
+        cardElements[activeIndex].style.filter = 'none';
+        cardElements[activeIndex].style.opacity = 1;
+        cardElements[activeIndex].style.left = `${centerOffset}px`;
 
-        // Rechte Karten
-        let stt = 0;
-        for (let i = active + 1; i < elements.length; i++) {
-            stt++;
-            elements[i].style.transform = `translateX(${3 * stt}px) scale(${1 - 0.2 * stt})`;
-            elements[i].style.zIndex = -stt;
-            elements[i].style.filter = 'blur(5px)';
-            elements[i].style.opacity = stt > 0 ? 0 : 0;
-            elements[i].style.left = `${centerOffset}px`;
+        let offset = 0;
+        for (let i = activeIndex + 1; i < cardElements.length; i++) {
+            offset++;
+            cardElements[i].style.transform = `translateX(${3 * offset}px) scale(${1 - 0.2 * offset})`;
+            cardElements[i].style.zIndex = -offset;
+            cardElements[i].style.filter = 'blur(5px)';
+            cardElements[i].style.opacity = 0;
+            cardElements[i].style.left = `${centerOffset}px`;
         }
 
-        // Linke Karten
-        stt = 0;
-        for (let i = active - 1; i >= 0; i--) {
-            stt++;
-            elements[i].style.transform = `translateX(${-3 * stt}px) scale(${1 - 0.2 * stt})`;
-            elements[i].style.zIndex = -stt;
-            elements[i].style.filter = 'blur(5px)';
-            elements[i].style.opacity = stt > 0 ? 0 : 0.0;
-            elements[i].style.left = `${centerOffset}px`;
+        offset = 0;
+        for (let i = activeIndex - 1; i >= 0; i--) {
+            offset++;
+            cardElements[i].style.transform = `translateX(${-3 * offset}px) scale(${1 - 0.2 * offset})`;
+            cardElements[i].style.zIndex = -offset;
+            cardElements[i].style.filter = 'blur(5px)';
+            cardElements[i].style.opacity = 0;
+            cardElements[i].style.left = `${centerOffset}px`;
         }
-    };
+    }
 
     onMount(() => {
-        elements = sliderContainer.querySelectorAll('.card');
-        loadShow();
+        cardElements = sliderContainer.querySelectorAll('.card');
+        updateCardPositions();
 
         interval = setInterval(() => {
-            active = (active + 1) % elements.length;
-            loadShow();
+            activeIndex = (activeIndex + 1) % cardElements.length;
+            updateCardPositions();
         }, 4000);
 
         return () => clearInterval(interval);
     });
 </script>
 
-
 <div class="flip-carousel" bind:this={sliderContainer}>
-    {#each items as day, index (day.date + '-' + currentIndex)}
-        <div class="card" on:click={() => selectDay(index)}>
+    {#each items as day, index (day.date + '-' + index)}
+        <div class="card">
             <div class="content">
                 <div class="date">{formatDay(day.date)}</div>
                 <div class="weather-icon small">
@@ -75,15 +71,12 @@
                 <div class="min-max">
                     <span class="min">Min: {Math.round(day.minTemperature)}°</span> /
                     <span class="max">Max: {Math.round(day.maxTemperature)}°</span>
-
                 </div>
-
                 <div class="description">{day.description}</div>
             </div>
         </div>
     {/each}
 </div>
-
 
 <style>
     .flip-carousel {
@@ -117,13 +110,9 @@
         -webkit-backdrop-filter: blur(5px);
         border: 1px solid rgba(255, 255, 255, 0.3);
         color: white;
-        
         display: flex;
-        
         justify-content: center;
         align-items: center;
-        
-        
     }
 
     .card .content {
@@ -139,22 +128,16 @@
         font-size: 2rem;
         font-weight: 700;
         padding-top: 20px;
-        
     }
 
     .weather-icon.small {
         flex-grow: 0.8;
         transform: scale(0.8);
-        
-        
     }
-
-    
 
     .min-max {
         font-size: 1.5rem;
         font-weight: bold;
-        
     }
 
     .description {
@@ -163,7 +146,6 @@
         opacity: 0.9;
         padding-top: 20px;
         padding-bottom: 20px;
-        
     }
 
     .max {
@@ -171,7 +153,6 @@
     }
 
     .min {
-        color: #007bff;
+        color: #adcbeb;
     }
-
 </style>
