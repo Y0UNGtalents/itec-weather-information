@@ -32,7 +32,7 @@
         margin-left: 18em;
         border: 1px solid rgba(255, 255, 255, 0.3);
         position: relative;
-        width: 500px;
+        width: 485px;
         height: 400px;
     }
 
