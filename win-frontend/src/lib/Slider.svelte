@@ -95,7 +95,7 @@
     }
 
     .card {
-        width: 485px;
+        width: 480px;
         height: 400px;
         position: absolute;
         top: 0;
