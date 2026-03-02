@@ -171,7 +171,7 @@
     }
 
     .min {
-        color: #007bff;
+        color: rgb(157, 95, 205);
     }
 
 </style>
