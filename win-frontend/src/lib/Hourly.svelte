@@ -29,7 +29,7 @@
         font-size: 2rem;
         font-weight: 600;
         margin-left: 1em;
-        margin-top: 20px;
+        margin-top: 2em;
         padding: 4px 16px;
         border-radius: 8px;
         color: white;

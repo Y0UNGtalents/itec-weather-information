@@ -1,11 +1,11 @@
 <script>
-    import { onMount } from 'svelte';
-    import WeatherLottieIcon from './WeatherLottieIcon.svelte';
+    import { onMount } from "svelte";
+    import WeatherLottieIcon from "./WeatherLottieIcon.svelte";
 
     let { items = [] } = $props();
 
     function formatDay(date) {
-        return new Date(date).toLocaleDateString('de-DE', { weekday: 'long' });
+        return new Date(date).toLocaleDateString("de-DE", { weekday: "long" });
     }
 
     let activeIndex = 1;
@@ -20,9 +20,9 @@
         const cardWidth = cardElements[activeIndex].offsetWidth;
         const centerOffset = (containerWidth - cardWidth) / 2;
 
-        cardElements[activeIndex].style.transform = 'none';
+        cardElements[activeIndex].style.transform = "none";
         cardElements[activeIndex].style.zIndex = 100;
-        cardElements[activeIndex].style.filter = 'none';
+        cardElements[activeIndex].style.filter = "none";
         cardElements[activeIndex].style.opacity = 1;
         cardElements[activeIndex].style.left = `${centerOffset}px`;
 
@@ -31,7 +31,7 @@
             offset++;
             cardElements[i].style.transform = `translateX(${3 * offset}px) scale(${1 - 0.2 * offset})`;
             cardElements[i].style.zIndex = -offset;
-            cardElements[i].style.filter = 'blur(5px)';
+            cardElements[i].style.filter = "blur(5px)";
             cardElements[i].style.opacity = 0;
             cardElements[i].style.left = `${centerOffset}px`;
         }
@@ -41,14 +41,14 @@
             offset++;
             cardElements[i].style.transform = `translateX(${-3 * offset}px) scale(${1 - 0.2 * offset})`;
             cardElements[i].style.zIndex = -offset;
-            cardElements[i].style.filter = 'blur(5px)';
+            cardElements[i].style.filter = "blur(5px)";
             cardElements[i].style.opacity = 0;
             cardElements[i].style.left = `${centerOffset}px`;
         }
     }
 
     onMount(() => {
-        cardElements = sliderContainer.querySelectorAll('.card');
+        cardElements = sliderContainer.querySelectorAll(".card");
         updateCardPositions();
 
         interval = setInterval(() => {
@@ -60,8 +60,8 @@
     });
 </script>
 
-<div class="flip-carousel" bind:this={sliderContainer}>
-    {#each items as day, index (day.date + '-' + index)}
+<div class="slide-container" bind:this={sliderContainer}>
+    {#each items as day, index (day.date + "-" + index)}
         <div class="card">
             <div class="content">
                 <div class="date">{formatDay(day.date)}</div>
@@ -69,8 +69,10 @@
                     <WeatherLottieIcon condition={day.weatherCondition} />
                 </div>
                 <div class="min-max">
-                    <span class="min">Min: {Math.round(day.minTemperature)}°</span> /
-                    <span class="max">Max: {Math.round(day.maxTemperature)}°</span>
+                    <span class="min">Min: {Math.round(day.minTemperature)}°</span>
+                    /
+                    <span class="max">Max: {Math.round(day.maxTemperature)}°</span
+                    >
                 </div>
                 <div class="description">{day.description}</div>
             </div>
@@ -79,15 +81,14 @@
 </div>
 
 <style>
-    .flip-carousel {
-        margin-top: 2em;
+    .slide-container {
         display: flex;
         justify-content: center;
         align-items: center;
         perspective: 1000px;
         position: relative;
         height: 300px;
-        margin-bottom: 30px;
+        margin-top: 2em;
         transform-style: preserve-3d;
         transition: transform 1s linear;
         max-width: 40%;
@@ -101,7 +102,9 @@
         top: 0;
         left: 0;
         opacity: 0.3;
-        transition: transform 1s ease, opacity 0.2s ease;
+        transition:
+            transform 1s ease,
+            opacity 0.2s ease;
         transform-style: preserve-3d;
         background: rgba(255, 255, 255, 0.06);
         border-radius: 60px;

@@ -379,8 +379,12 @@
                     <div class="daily">Tägliche Vorhersage</div>
 
                     <div class="down">
-                        <Slider items={dailyForecasts.slice(1)} />
-                        <Map mapUrl={mapUrl} cityName={city} />
+                        <div class="slider-wrapper">
+                            <Slider items={dailyForecasts.slice(1)} />
+                        </div>
+                        <div class="map-wrapper">
+                            <Map mapUrl={mapUrl} cityName={city} />
+                        </div>
                     </div>
                 {:else if !loading && !error}
                     <div class="no-data">
@@ -434,10 +438,6 @@
         pointer-events: none;
     }
 
-    .map-container iframe {
-        display: block;
-    }
-
     :global(body) {
         margin: 0;
         padding: 0;
@@ -453,7 +453,18 @@
     .down {
         display: flex;
         flex-direction: row;
-        height: 800px;
+        align-items: flex-start;
+        width: 93%;
+        margin-left: 2em;
+    }
+
+    .slider-wrapper {
+        position: relative;
+        left: -3em;
+    }
+
+    .map-wrapper {
+        margin-left: auto;
     }
 
     :global(*) {
@@ -610,7 +621,7 @@
         font-size: 2rem;
         font-weight: 600;
         margin-left: 1em;
-        margin-top: 20px;
+        margin-top: 2em;
         padding: 4px 16px;
         border-radius: 8px;
         color: white;

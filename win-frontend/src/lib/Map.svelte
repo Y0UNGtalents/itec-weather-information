@@ -2,7 +2,7 @@
     let { mapUrl = "", cityName = "" } = $props();
 </script>
 
-<div class="contain">
+<div class="container">
     {#if mapUrl}
         <div class="map-container">
             <iframe
@@ -20,20 +20,20 @@
 </div>
 
 <style>
-    .contain {
+    .container {
         display: flex;
         flex-direction: row;
     }
 
     .map-container {
+        width: 480px;
+        height: 400px;
         margin-top: 2em;
         overflow: hidden;
         border-radius: 60px;
         margin-left: 18em;
         border: 1px solid rgba(255, 255, 255, 0.3);
         position: relative;
-        width: 480px;
-        height: 400px;
     }
 
     iframe {
