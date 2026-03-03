@@ -38,12 +38,12 @@
         const iconToCondition = {
             "01d": "clear_d",
             "01n": "clear_n",
-            "02d": "lightcloudy_d",
-            "02n": "lightcloudy_n",
-            "03d": "midcloudy_d",
-            "03n": "midcloudy_n",
-            "04d": "cloudy_d",
-            "04n": "cloudy_n",
+            "02d": "lightcloud_d",
+            "02n": "lightcloud_n",
+            "03d": "midcloud_d",
+            "03n": "midcloud_n",
+            "04d": "cloud_d",
+            "04n": "cloud_n",
             "09d": "rain_d",
             "09n": "rain_n",
             "10d": "lightrain_d",
@@ -155,23 +155,27 @@
                     backgroundVideo = "/videos/clear_n.mp4";
                     break;
 
-                case "lightcloudy_d":
+                case "lightcloud_d":
                     backgroundVideo = "/videos/day.mp4";
                     break;
-                case "lightcloudy_n":
+                case "lightcloud_n":
                     backgroundVideo = "/videos/day.mp4";
                     break;
 
-                case "cloudy_d":
+                case "cloud_d":
                     backgroundVideo = "/videos/claudy_d.mp4";
                     break;
-                case "cloudy_n":
+                case "cloud_n":
                     backgroundVideo = "/videos/cloudy_n.mp4";
                     break;
 
-                case "snow":
-                    backgroundVideo = "/videos/Snowy.mp4";
+                case "snow_d":
+                    backgroundVideo = "/videos/snow_d.mp4";
                     break;
+                case "snow_n":
+                    backgroundVideo = "/videos/snow_n.mp4";
+                    break;
+
                 case "midcloudy":
                     backgroundVideo = "/videos/midcloud.mp4";
                     break;
@@ -191,10 +195,10 @@
             case "clear_d":
             case "clear_n":
                 return "linear-gradient(to bottom, #2980b9, #6dd5fa, #ffffff)";
-            case "cloudy_d":
-            case "cloudy_n":
-            case "lightcloudy_d":
-            case "lightcloudy_n":
+            case "cloud_d":
+            case "cloud_n":
+            case "lightcloud_d":
+            case "lightcloud_n":
                 return "linear-gradient(to bottom, #757f9a, #d7dde8)";
             case "rain_d":
             case "rain_n":
