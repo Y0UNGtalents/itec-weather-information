@@ -29,7 +29,8 @@
         let offset = 0;
         for (let i = activeIndex + 1; i < cardElements.length; i++) {
             offset++;
-            cardElements[i].style.transform = `translateX(${3 * offset}px) scale(${1 - 0.2 * offset})`;
+            cardElements[i].style.transform =
+                `translateX(${3 * offset}px) scale(${1 - 0.2 * offset})`;
             cardElements[i].style.zIndex = -offset;
             cardElements[i].style.filter = "blur(5px)";
             cardElements[i].style.opacity = 0;
@@ -39,7 +40,8 @@
         offset = 0;
         for (let i = activeIndex - 1; i >= 0; i--) {
             offset++;
-            cardElements[i].style.transform = `translateX(${-3 * offset}px) scale(${1 - 0.2 * offset})`;
+            cardElements[i].style.transform =
+                `translateX(${-3 * offset}px) scale(${1 - 0.2 * offset})`;
             cardElements[i].style.zIndex = -offset;
             cardElements[i].style.filter = "blur(5px)";
             cardElements[i].style.opacity = 0;
@@ -66,12 +68,17 @@
             <div class="content">
                 <div class="date">{formatDay(day.date)}</div>
                 <div class="weather-icon small">
-                    <WeatherLottieIcon condition={day.weatherCondition.split('_')[0]} />
+                    <WeatherLottieIcon
+                        condition={day.weatherCondition.split("_")[0]}
+                    />
                 </div>
                 <div class="min-max">
-                    <span class="min">Min: {Math.round(day.minTemperature)}°</span>
+                    <span class="min"
+                        >Min: {Math.round(day.minTemperature)}°</span
+                    >
                     /
-                    <span class="max">Max: {Math.round(day.maxTemperature)}°</span
+                    <span class="max"
+                        >Max: {Math.round(day.maxTemperature)}°</span
                     >
                 </div>
                 <div class="description">{day.description}</div>
@@ -87,12 +94,10 @@
         align-items: center;
         perspective: 1000px;
         position: relative;
-        height: 300px;
-        margin-top: 2em;
+        width: 480px;
+        height: 400px;
         transform-style: preserve-3d;
         transition: transform 1s linear;
-        max-width: 40%;
-        margin-left: 18em;
     }
 
     .card {
@@ -106,12 +111,12 @@
             transform 1s ease,
             opacity 0.2s ease;
         transform-style: preserve-3d;
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 60px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: var(--glass-bg);
+        border-radius: var(--glass-border-radius);
+        box-shadow: var(--glass-shadow);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: var(--glass-border);
         color: white;
         display: flex;
         justify-content: center;
@@ -152,10 +157,10 @@
     }
 
     .max {
-        color: #ff9900;
+        color: var(--temperature-max-color);
     }
 
     .min {
-        color: #adcbeb;
+        color: var(--temperature-min-color);
     }
 </style>

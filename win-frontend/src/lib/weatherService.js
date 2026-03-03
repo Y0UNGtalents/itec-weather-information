@@ -39,6 +39,7 @@ export async function fetchWeatherForecast(cityName) {
  */
 function transformForecast(owmData) {
     const cityName = owmData.city.name;
+    const timezoneOffsetSeconds = owmData.city.timezone;
 
     const byDay = {};
     for (const entry of owmData.list) {
@@ -66,6 +67,7 @@ function transformForecast(owmData) {
 
         return {
             city: cityName,
+            timezoneOffsetSeconds,
             forecastDate: representative.dt_txt,
             temperature: representative.main.temp,
             minTemperature,

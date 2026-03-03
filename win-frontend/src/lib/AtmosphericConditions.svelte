@@ -25,16 +25,16 @@
 
 <style>
     .details {
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 60px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: var(--glass-bg);
+        border-radius: var(--glass-border-radius);
+        box-shadow: var(--glass-shadow);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: var(--glass-border);
         padding-top: 14px;
-        width: 93%;
+        width: var(--block-width);
         height: 12em;
-        margin-left: 2em;
+        margin-left: var(--block-margin-left);
     }
 
     .detail-item {

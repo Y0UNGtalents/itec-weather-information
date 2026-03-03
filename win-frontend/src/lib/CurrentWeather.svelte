@@ -39,10 +39,6 @@
 </div>
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
-
     .today-weather-card {
         width: 100%;
         max-width: 620px;
@@ -102,13 +98,13 @@
     }
 
     .max {
-        color: #FF9041;
+        color: var(--temperature-max-color);
         padding-top: 10px;
         text-align: left;
     }
 
     .min {
-        color: rgb(157, 95, 205);
+        color: var(--temperature-min-color);
         padding-top: 10px;
         text-align: left;
     }

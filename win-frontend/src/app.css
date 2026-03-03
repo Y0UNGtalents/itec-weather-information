@@ -1,0 +1,24 @@
+* {
+        box-sizing: border-box;
+}
+
+
+:root {
+    /* Glassmorphism card */
+    --glass-bg:                 rgba(255, 255, 255, 0.06);
+    --glass-border:             1px solid rgba(255, 255, 255, 0.3);
+    --glass-border-radius:      60px;
+    --glass-shadow:             0 4px 30px rgba(0, 0, 0, 0.1);
+    --glass-blur:               blur(5px);
+
+    --temperature-min-color:    #adcbeb;
+    --temperature-max-color:    #ff9900;
+
+    /* Content block layout */
+    --block-width:              93%;
+    --block-margin-left:        2em;
+
+    /* Typography */
+    --section-header-font-size: 2rem;
+}
+

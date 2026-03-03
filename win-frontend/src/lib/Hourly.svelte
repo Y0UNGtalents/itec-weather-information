@@ -12,21 +12,21 @@
 
 <style>
     .hourly-forecast {
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 60px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        width: 93%;
+        background: var(--glass-bg);
+        border-radius: var(--glass-border-radius);
+        box-shadow: var(--glass-shadow);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: var(--glass-border);
+        width: var(--block-width);
         height: 20em;
-        margin-left: 2em;
+        margin-left: var(--block-margin-left);
         margin-top: 1em;
         color: white;
     }
 
     .section-header {
-        font-size: 2rem;
+        font-size: var(--section-header-font-size);
         font-weight: 600;
         margin-left: 1em;
         margin-top: 2em;

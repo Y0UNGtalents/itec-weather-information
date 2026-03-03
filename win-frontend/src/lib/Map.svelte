@@ -11,7 +11,7 @@
                 style="border:0;"
                 loading="lazy"
                 allowfullscreen
-            />
+            ></iframe>
             {#if cityName}
                 <div class="city-overlay">{cityName}</div>
             {/if}
@@ -28,11 +28,9 @@
     .map-container {
         width: 480px;
         height: 400px;
-        margin-top: 2em;
         overflow: hidden;
-        border-radius: 60px;
-        margin-left: 14em;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: var(--glass-border-radius);
+        border: var(--glass-border);
         position: relative;
     }
 
@@ -60,6 +58,6 @@
         font-weight: 700;
         color: black;
         text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-        border-radius: 60px 60px 0 0;
+        border-radius: var(--glass-border-radius) var(--glass-border-radius) 0 0;
     }
 </style>
