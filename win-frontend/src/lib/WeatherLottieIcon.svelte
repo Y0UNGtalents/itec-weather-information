@@ -11,12 +11,12 @@
         const conditionToFile = {
             rain: '/lottie/rain.json',
             snow: '/lottie/snow.json',
-            cloudy: '/lottie/cloudSun.json',
+            cloud: '/lottie/cloud.json',
             fog: '/lottie/fog.json',
-            storm: '/lottie/rainStorm.json',
+            storm: '/lottie/storm.json',
             clear: '/lottie/sun.json',
-            lightCloudy: '/lottie/lightCloudy.json',
-            midcloudy: '/lottie/lightCloudy.json'
+            lightcloud: '/lottie/lightcloud.json',
+            midcloud: '/lottie/lightcloud.json'
         };
         return conditionToFile[weatherCondition] || '/lottie/default.json';
     }

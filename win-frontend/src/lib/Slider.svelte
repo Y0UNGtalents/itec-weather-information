@@ -66,7 +66,7 @@
             <div class="content">
                 <div class="date">{formatDay(day.date)}</div>
                 <div class="weather-icon small">
-                    <WeatherLottieIcon condition={day.weatherCondition} />
+                    <WeatherLottieIcon condition={day.weatherCondition.split('_')[0]} />
                 </div>
                 <div class="min-max">
                     <span class="min">Min: {Math.round(day.minTemperature)}°</span>
