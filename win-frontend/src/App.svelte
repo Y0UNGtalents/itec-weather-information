@@ -13,6 +13,8 @@
     let weatherData = $state([]);
     let loading = $state(false);
     let error = $state(null);
+    let errorKey = $state(0);
+    let errorTimeout = null;
     let selectedDayIndex = $state(0);
     let recentSearches = $state([]);
     let isConnected = $state(true);
@@ -31,6 +33,13 @@
     const NIGHT_END = 7;
 
     const TRIGGER_WORD = "Wetter";
+
+    function showError(message) {
+        error = message;
+        errorKey++;
+        if (errorTimeout) clearTimeout(errorTimeout);
+        errorTimeout = setTimeout(() => { error = null; }, 7000);
+    }
 
     function getWeatherConditionFromIcon(iconCode) {
         if (!iconCode) return "default";
@@ -61,7 +70,7 @@
 
     async function fetchWeatherData(cityName) {
         if (!cityName || !cityName.trim()) {
-            error = "Bitte geben Sie einen Stadtnamen an.";
+            showError("Bitte geben Sie einen Stadtnamen an.");
             loading = false;
             return;
         }
@@ -93,9 +102,8 @@
             }
         } catch (err) {
             console.error("Error fetching weather data:", err);
-            error = `Error fetching weather data: ${err.message}`;
-            weatherData = [];
-            dailyForecasts = [];
+            showError(err.message);
+            // Bestehende Daten beibehalten, damit Hintergrund und Wetter sichtbar bleibt
         } finally {
             loading = false;
         }
@@ -235,8 +243,7 @@
             console.warn(
                 "Speech Recognition API nicht im Browser unterstuetzt.",
             );
-            error =
-                "Spracherkennung wird von Ihrem Browser nicht unterstuetzt.";
+            showError("Spracherkennung wird von Ihrem Browser nicht unterstützt.");
             isListening = false;
             return;
         }
@@ -286,7 +293,6 @@
                         .slice(TRIGGER_WORD.length)
                         .trim();
                     if (spokenCity) {
-                        city = spokenCity;
                         fetchWeatherData(spokenCity);
                     }
                 }
@@ -297,7 +303,7 @@
                 isRecording = false;
 
                 if (event.error !== "no-speech" && event.error !== "aborted") {
-                    error = `Spracherkennungsfehler: ${event.error}. ${event.message || ""}`;
+                    showError(`Spracherkennungsfehler: ${event.error}. ${event.message || ""}`);
                 }
 
                 if (
@@ -322,7 +328,7 @@
             }
         } catch (e) {
             console.error("Error setting up speech recognition:", e);
-            error = "Fehler bei der Initialisierung der Spracherkennung.";
+            showError("Fehler bei der Initialisierung der Spracherkennung.");
             isListening = false;
         }
     }
@@ -433,10 +439,6 @@
                     {/if}
                 </div>
 
-                {#if error}
-                    <div class="error-message">{error}</div>
-                {/if}
-
                 {#if loading}
                     <div class="loading-container">
                         <div class="loading-spinner"></div>
@@ -498,14 +500,17 @@
             <div class="loading-spinner"></div>
             <div class="loading-text">Wetterdaten werden geladen...</div>
         </div>
-    {:else if error && dailyForecasts.length === 0}
-        <div class="initial-error">{error}</div>
+    {/if}
+
+    {#if error}
+        {#key errorKey}
+            <div class="error-toast">{error}</div>
+        {/key}
     {/if}
 </main>
 
 <style>
-    .initial-loading,
-    .initial-error {
+    .initial-loading {
         position: fixed;
         top: 50%;
         left: 50%;
@@ -515,10 +520,22 @@
         z-index: 10;
     }
 
-    .initial-error {
-        background: rgba(200, 0, 0, 0.7);
-        padding: 1rem 2rem;
-        border-radius: 8px;
+    .error-toast {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(190, 40, 40, 0.92);
+        color: white;
+        padding: 18px 40px;
+        border-radius: 10px;
+        z-index: 3000;
+        font-size: 1.4rem;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+        white-space: nowrap;
+        animation: toast-anim 7s ease-in-out forwards;
     }
 
     .background-video {
@@ -733,16 +750,11 @@
         opacity: 0.9;
     }
 
-    .error-message {
-        color: #fff;
-        text-align: center;
-        margin: 20px auto;
-        padding: 12px 18px;
-        background-color: rgba(231, 76, 60, 0.85);
-        border-radius: 8px;
-        max-width: 550px;
-        backdrop-filter: blur(5px);
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    @keyframes toast-anim {
+        0%   { opacity: 0; transform: translateX(-50%) translateY(-14px); }
+        8%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        85%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
     }
 
     @keyframes spin {
