@@ -36,24 +36,24 @@
         if (!iconCode) return "default";
 
         const iconToCondition = {
-            "01d": "clear",
-            "01n": "clear",
-            "02d": "lightCloudy",
-            "02n": "lightCloudy",
-            "03d": "midcloudy",
-            "03n": "midcloudy",
-            "04d": "cloudy",
-            "04n": "cloudy",
-            "09d": "rain",
-            "09n": "rain",
-            "10d": "lightrain",
-            "10n": "lightrain",
-            "11d": "storm",
-            "11n": "storm",
-            "13d": "snow",
-            "13n": "snow",
-            "50d": "fog",
-            "50n": "fog"
+            "01d": "clear_d",
+            "01n": "clear_n",
+            "02d": "lightcloudy_d",
+            "02n": "lightcloudy_n",
+            "03d": "midcloudy_d",
+            "03n": "midcloudy_n",
+            "04d": "cloudy_d",
+            "04n": "cloudy_n",
+            "09d": "rain_d",
+            "09n": "rain_n",
+            "10d": "lightrain_d",
+            "10n": "lightrain_n",
+            "11d": "storm_d",
+            "11n": "storm_n",
+            "13d": "snow_d",
+            "13n": "snow_n",
+            "50d": "fog_d",
+            "50n": "fog_n"
         };
 
         return iconToCondition[iconCode] || "default";
@@ -141,18 +141,34 @@
             backgroundVideo = "/videos/sunset.mp4";
         } else {
             switch (condition) {
-                case "rain":
-                    backgroundVideo = "/videos/Regen.mp4";
+                case "rain_d":
+                    backgroundVideo = "/videos/rain_d.mp4";
                     break;
-                case "clear":
-                    backgroundVideo = "/videos/Clean.mp4";
+                case "rain_n":
+                    backgroundVideo = "/videos/rain_n.mp4";
                     break;
-                case "lightCloudy":
+
+                case "clear_d":
+                    backgroundVideo = "/videos/clear_d.mp4";
+                    break;
+                case "clear_n":
+                    backgroundVideo = "/videos/clear_n.mp4";
+                    break;
+
+                case "lightcloudy_d":
                     backgroundVideo = "/videos/day.mp4";
                     break;
-                case "cloudy":
-                    backgroundVideo = "/videos/Clouds.mp4";
+                case "lightcloudy_n":
+                    backgroundVideo = "/videos/day.mp4";
                     break;
+
+                case "cloudy_d":
+                    backgroundVideo = "/videos/claudy_d.mp4";
+                    break;
+                case "cloudy_n":
+                    backgroundVideo = "/videos/cloudy_n.mp4";
+                    break;
+
                 case "snow":
                     backgroundVideo = "/videos/Snowy.mp4";
                     break;
@@ -172,18 +188,25 @@
         if (!condition) return "linear-gradient(to bottom, #4b6cb7, #182848)";
 
         switch (condition) {
-            case "clear":
+            case "clear_d":
+            case "clear_n":
                 return "linear-gradient(to bottom, #2980b9, #6dd5fa, #ffffff)";
-            case "cloudy":
-            case "lightCloudy":
+            case "cloudy_d":
+            case "cloudy_n":
+            case "lightcloudy_d":
+            case "lightcloudy_n":
                 return "linear-gradient(to bottom, #757f9a, #d7dde8)";
-            case "rain":
+            case "rain_d":
+            case "rain_n":
                 return "linear-gradient(to bottom, #616161, #9bc5c3)";
-            case "snow":
+            case "snow_d":
+            case "snow_n":
                 return "linear-gradient(to bottom, #e6dada, #274046)";
-            case "storm":
+            case "storm_d":
+            case "storm_n":
                 return "linear-gradient(to bottom, #232526, #414345)";
-            case "fog":
+            case "fog_d":
+            case "fog_n":
                 return "linear-gradient(to bottom, #b79891, #94716b)";
             default:
                 return "linear-gradient(to bottom, #4b6cb7, #182848)";
