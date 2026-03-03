@@ -1,5 +1,3 @@
-Fog Day: https://www.pexels.com/video/a-forest-covered-in-fog-and-trees-27857022/
-
 Snow Night: https://pixabay.com/videos/snow-snowfall-winter-wonderland-223112/
 
 # Win Frontend

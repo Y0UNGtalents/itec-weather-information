@@ -9,7 +9,7 @@
 
     let dailyForecasts = $state([]);
     let backgroundVideo = $state("");
-    let city = $state(localStorage.getItem('lastCity') || "Heilbronn");
+    let city = $state(localStorage.getItem("lastCity") || "Heilbronn");
     let weatherData = $state([]);
     let loading = $state(false);
     let error = $state(null);
@@ -53,7 +53,7 @@
             "13d": "snow_d",
             "13n": "snow_n",
             "50d": "fog_d",
-            "50n": "fog_n"
+            "50n": "fog_n",
         };
 
         return iconToCondition[iconCode] || "default";
@@ -74,18 +74,22 @@
             weatherData = newWeatherData;
             processWeatherData();
 
-            const displayCity = (dailyForecasts.length > 0 && dailyForecasts[0].city)
-                ? dailyForecasts[0].city
-                : cityName;
+            const displayCity =
+                dailyForecasts.length > 0 && dailyForecasts[0].city
+                    ? dailyForecasts[0].city
+                    : cityName;
 
             if (!recentSearches.includes(displayCity)) {
                 recentSearches = [displayCity, ...recentSearches.slice(0, 4)];
-                localStorage.setItem("recentSearches", JSON.stringify(recentSearches));
+                localStorage.setItem(
+                    "recentSearches",
+                    JSON.stringify(recentSearches),
+                );
             }
 
             if (dailyForecasts.length > 0 && dailyForecasts[0].city) {
                 city = dailyForecasts[0].city;
-                localStorage.setItem('lastCity', city);
+                localStorage.setItem("lastCity", city);
             }
         } catch (err) {
             console.error("Error fetching weather data:", err);
@@ -118,10 +122,10 @@
             weatherCondition: getWeatherConditionFromIcon(item.iconCode),
             dayTemperatures: item.dayTemperatures
                 ? item.dayTemperatures.map((entry) => ({
-                    temp: entry.temperature,
-                    time: new Date(entry.forecastDate)
-                }))
-                : []
+                      temp: entry.temperature,
+                      time: new Date(entry.forecastDate),
+                  }))
+                : [],
         }));
 
         const currentCity = dailyForecasts[0].city;
@@ -133,58 +137,61 @@
         const currentHour = new Date().getHours();
         const condition = dailyForecasts[0].weatherCondition;
 
-        if (currentHour >= NIGHT_START || currentHour <= NIGHT_END) {
-            backgroundVideo = "/videos/Night.mp4";
-        } else if (currentHour >= MORNING_START && currentHour < MORNING_END) {
-            backgroundVideo = "/videos/sunset.mp4";
-        } else if (currentHour >= SUNSET_START && currentHour < SUNSET_END) {
-            backgroundVideo = "/videos/sunset.mp4";
-        } else {
-            switch (condition) {
-                case "rain_d":
-                    backgroundVideo = "/videos/rain_d.mp4";
-                    break;
-                case "rain_n":
-                    backgroundVideo = "/videos/rain_n.mp4";
-                    break;
+        switch (condition) {
+            case "clear_d":
+                backgroundVideo = "/videos/clear_d.mp4";
+                break;
+            case "clear_n":
+                backgroundVideo = "/videos/clear_n.mp4";
+                break;
 
-                case "clear_d":
-                    backgroundVideo = "/videos/clear_d.mp4";
-                    break;
-                case "clear_n":
-                    backgroundVideo = "/videos/clear_n.mp4";
-                    break;
+            case "lightcloud_d":
+                backgroundVideo = "/videos/day.mp4";
+                break;
+            case "lightcloud_n":
+                backgroundVideo = "/videos/day.mp4";
+                break;
 
-                case "lightcloud_d":
-                    backgroundVideo = "/videos/day.mp4";
-                    break;
-                case "lightcloud_n":
-                    backgroundVideo = "/videos/day.mp4";
-                    break;
+            case "midcloud_d":
+                backgroundVideo = "/videos/midcloud_d.mp4";
+                break;
+            case "midcloud_n":
+                backgroundVideo = "/videos/midcloud_n.mp4";
+                break;
 
-                case "cloud_d":
-                    backgroundVideo = "/videos/claudy_d.mp4";
-                    break;
-                case "cloud_n":
-                    backgroundVideo = "/videos/cloudy_n.mp4";
-                    break;
+            case "cloud_d":
+                backgroundVideo = "/videos/claud_d.mp4";
+                break;
+            case "cloud_n":
+                backgroundVideo = "/videos/cloud_n.mp4";
+                break;
 
-                case "snow_d":
-                    backgroundVideo = "/videos/snow_d.mp4";
-                    break;
-                case "snow_n":
-                    backgroundVideo = "/videos/snow_n.mp4";
-                    break;
+            case "lightrain_d":
+                backgroundVideo = "/videos/lightrain_d.mp4";
+                break;
+            case "lightrain_n":
+                backgroundVideo = "/videos/lightrain_n.mp4";
+                break;
 
-                case "midcloudy":
-                    backgroundVideo = "/videos/midcloud.mp4";
-                    break;
-                case "lightrain":
-                    backgroundVideo = "/videos/taube.mp4";
-                    break;
-                default:
-                    backgroundVideo = "/videos/day.mp4";
-            }
+            case "rain_d":
+                backgroundVideo = "/videos/rain_d.mp4";
+                break;
+            case "rain_n":
+                backgroundVideo = "/videos/rain_n.mp4";
+                break;
+
+            case "snow_d":
+                backgroundVideo = "/videos/snow_d.mp4";
+                break;
+            case "snow_n":
+                backgroundVideo = "/videos/snow_n.mp4";
+                break;
+
+            default:
+                if (currentHour >= NIGHT_START || currentHour <= NIGHT_END) {
+                    backgroundVideo = "/videos/default_n.mp4";
+                }
+                backgroundVideo = "/videos/default_d.mp4";
         }
     }
 
@@ -218,22 +225,32 @@
     }
 
     function setupSpeechRecognition() {
-        if (typeof window === 'undefined' || !('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-            console.warn("Speech Recognition API nicht im Browser unterstuetzt.");
-            error = "Spracherkennung wird von Ihrem Browser nicht unterstuetzt.";
+        if (
+            typeof window === "undefined" ||
+            !(
+                "SpeechRecognition" in window ||
+                "webkitSpeechRecognition" in window
+            )
+        ) {
+            console.warn(
+                "Speech Recognition API nicht im Browser unterstuetzt.",
+            );
+            error =
+                "Spracherkennung wird von Ihrem Browser nicht unterstuetzt.";
             isListening = false;
             return;
         }
 
         try {
             // @ts-ignore
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const SpeechRecognition =
+                window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
-            recognition.lang = 'de-DE';
+            recognition.lang = "de-DE";
             recognition.continuous = false;
             recognition.interimResults = false;
 
-            recognition.onstart = () => isRecording = true;
+            recognition.onstart = () => (isRecording = true);
 
             recognition.onend = () => {
                 const wasRecording = isRecording;
@@ -246,7 +263,7 @@
                                 recognition.start();
                             }
                         } catch (e) {
-                            if (e.name !== 'InvalidStateError') {
+                            if (e.name !== "InvalidStateError") {
                                 isListening = false;
                             }
                         }
@@ -265,7 +282,9 @@
 
                 const lowerTranscript = transcript.toLowerCase();
                 if (lowerTranscript.startsWith(TRIGGER_WORD.toLowerCase())) {
-                    const spokenCity = lowerTranscript.slice(TRIGGER_WORD.length).trim();
+                    const spokenCity = lowerTranscript
+                        .slice(TRIGGER_WORD.length)
+                        .trim();
                     if (spokenCity) {
                         city = spokenCity;
                         fetchWeatherData(spokenCity);
@@ -277,11 +296,18 @@
                 console.error("Speech recognition error:", event.error);
                 isRecording = false;
 
-                if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                    error = `Spracherkennungsfehler: ${event.error}. ${event.message || ''}`;
+                if (event.error !== "no-speech" && event.error !== "aborted") {
+                    error = `Spracherkennungsfehler: ${event.error}. ${event.message || ""}`;
                 }
 
-                if (['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(event.error)) {
+                if (
+                    [
+                        "not-allowed",
+                        "service-not-allowed",
+                        "audio-capture",
+                        "network",
+                    ].includes(event.error)
+                ) {
                     isListening = false;
                     if (recognition) recognition.abort();
                 } else if (isListening && recognition) {
@@ -303,8 +329,8 @@
 
     function checkConnection() {
         isConnected = navigator.onLine;
-        window.addEventListener('online', () => isConnected = true);
-        window.addEventListener('offline', () => {
+        window.addEventListener("online", () => (isConnected = true));
+        window.addEventListener("offline", () => {
             isConnected = false;
             isListening = false;
             if (recognition && isRecording) recognition.stop();
@@ -337,8 +363,8 @@
                 recognition = null;
             }
 
-            window.removeEventListener('online', () => isConnected = true);
-            window.removeEventListener('offline', () => isConnected = false);
+            window.removeEventListener("online", () => (isConnected = true));
+            window.removeEventListener("offline", () => (isConnected = false));
         };
     });
 </script>
@@ -357,28 +383,52 @@
 
         {#if !isConnected}
             <div class="status-overlay error">
-                Keine Internetverbindung. Wetterdaten und Sprachsteuerung koennten beeintraechtigt sein.
+                Keine Internetverbindung. Wetterdaten und Sprachsteuerung
+                koennten beeintraechtigt sein.
             </div>
         {/if}
 
-        <div class="weather-app" style="background: {getBackgroundGradient(currentDay.weatherCondition)}">
+        <div
+            class="weather-app"
+            style="background: {getBackgroundGradient(
+                currentDay.weatherCondition,
+            )}"
+        >
             <div class="app-content-wrapper">
                 <div class="app-header">
                     <h1>Wetter</h1>
                     {#if showVoiceHint}
                         <div class="voice-hint">
                             <div class="voice-hint-content">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                     stroke-linejoin="round">
-                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path
+                                        d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+                                    ></path>
                                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                                    <line x1="12" y1="19" x2="12" y2="23"
+                                    ></line>
                                     <line x1="8" y1="23" x2="16" y2="23"></line>
                                 </svg>
-                                <span>Sage "{TRIGGER_WORD} [Stadtname]" (z.B. "{TRIGGER_WORD} Berlin")</span>
+                                <span
+                                    >Sage "{TRIGGER_WORD} [Stadtname]" (z.B. "{TRIGGER_WORD}
+                                    Berlin")</span
+                                >
                             </div>
-                            <button class="voice-hint-close" onclick={() => showVoiceHint = false}>x</button>
+                            <button
+                                class="voice-hint-close"
+                                onclick={() => (showVoiceHint = false)}
+                                >x</button
+                            >
                         </div>
                     {/if}
                 </div>
@@ -390,7 +440,9 @@
                 {#if loading}
                     <div class="loading-container">
                         <div class="loading-spinner"></div>
-                        <div class="loading-text">Wetterdaten werden geladen...</div>
+                        <div class="loading-text">
+                            Wetterdaten werden geladen...
+                        </div>
                     </div>
                 {:else if dailyForecasts.length > 0 && dailyForecasts[selectedDayIndex]}
                     <Temp day={currentDay} />
@@ -410,17 +462,31 @@
                             <Slider items={dailyForecasts.slice(1)} />
                         </div>
                         <div class="map-wrapper">
-                            <Map mapUrl={mapUrl} cityName={city} />
+                            <Map {mapUrl} cityName={city} />
                         </div>
                     </div>
                 {:else if !loading && !error}
                     <div class="no-data">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="64"
+                            height="64"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"
+                            ></path>
                         </svg>
-                        <p>Keine Wetterdaten verfuegbar. Bitte suchen Sie nach einer Stadt oder verwenden Sie die
-                            Sprachsteuerung (sage "{TRIGGER_WORD} [Stadt]").</p>
+                        <p>
+                            Keine Wetterdaten verfuegbar. Bitte suchen Sie nach
+                            einer Stadt oder verwenden Sie die Sprachsteuerung
+                            (sage "{TRIGGER_WORD} [Stadt]").
+                        </p>
                     </div>
                 {/if}
             </div>
@@ -438,7 +504,8 @@
 </main>
 
 <style>
-    .initial-loading, .initial-error {
+    .initial-loading,
+    .initial-error {
         position: fixed;
         top: 50%;
         left: 50%;
