@@ -15,6 +15,7 @@
             fog: '/lottie/fog.json',
             storm: '/lottie/storm.json',
             clear: '/lottie/sun.json',
+            lightrain: '/lottie/lightrain.json',
             lightcloud: '/lottie/lightcloud.json',
             midcloud: '/lottie/lightcloud.json'
         };
