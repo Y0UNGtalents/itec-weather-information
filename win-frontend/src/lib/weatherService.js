@@ -50,11 +50,10 @@ function transformForecast(owmData) {
         byDay[dateKey].push(entry);
     }
 
-    return Object.keys(byDay).sort().map((dateKey) => {
+    const forecasts = Object.keys(byDay).sort().map((dateKey) => {
         const entries = byDay[dateKey];
 
-        const representative =
-            entries.find((e) => e.dt_txt.includes("12:00:00")) || entries[0];
+        const representative = entries.find((e) => e.dt_txt.includes("12:00:00")) || entries[0];
 
         const minTemperature = Math.min(...entries.map((e) => e.main.temp_min));
         const maxTemperature = Math.max(...entries.map((e) => e.main.temp_max));
@@ -80,4 +79,8 @@ function transformForecast(owmData) {
             dayTemperatures,
         };
     });
+
+    const firstEntryIcon = owmData.list[0].weather[0].icon;
+    forecasts[0].iconCode = firstEntryIcon;
+    return forecasts;
 }

@@ -13,6 +13,7 @@
     const SPEECH_RESTART_DELAY_MS = 300;
     const SPEECH_RETRY_DELAY_MS = 1000;
     const FATAL_SPEECH_ERRORS = ["not-allowed", "service-not-allowed", "audio-capture", "network"];
+    const REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 Minuten
 
     const ICON_TO_WEATHER_CONDITION = {
         "01d": "clear_d",      "01n": "clear_n",
@@ -79,6 +80,7 @@
      * @param {number} timezoneOffsetSeconds
      */
     function backgroundVideoFromCondition(condition, timezoneOffsetSeconds) {
+        
         if (condition in WEATHER_CONDITION_TO_VIDEO) {
             return WEATHER_CONDITION_TO_VIDEO[condition];
         }
@@ -252,7 +254,12 @@
             fetchWeatherData(city);
         }
 
+        const refreshInterval = setInterval(() => {
+            if (city) fetchWeatherData(city);
+        }, REFRESH_INTERVAL_MS);
+
         return () => {
+            clearInterval(refreshInterval);
             isListening = false;
 
             if (recognition) {
