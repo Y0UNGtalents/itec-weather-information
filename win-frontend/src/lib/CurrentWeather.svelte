@@ -3,19 +3,29 @@
 
     let { day } = $props();
 
-    function formatDate(date) {
-        return new Date(date).toLocaleDateString("de-DE", {
+    function formatCityLocalDate(localTime) {
+        return new Date(localTime).toLocaleDateString("de-DE", {
             weekday: "long",
             year: "numeric",
             month: "long",
             day: "numeric",
+            timeZone: "UTC",
+        });
+    }
+
+    function formatCityLocalClock(localTime) {
+        return new Date(localTime).toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "UTC",
         });
     }
 </script>
 
 <div class="today-weather-card">
     <div class="city-name-display">{day.city}</div>
-    <div class="date">{formatDate(day.date)}</div>
+    <div class="date">{formatCityLocalDate(day.localTime ?? day.date)}</div>
+    <div class="local-time">{formatCityLocalClock(day.localTime ?? day.date)} Ortszeit</div>
 
     <div class="weather-info">
         <div class="temperature-container">
@@ -53,9 +63,16 @@
 
     .today-weather-card .date {
         font-size: 1em;
-        margin-bottom: 9px;
+        margin-bottom: 4px;
         text-align: left;
         font-weight: 500;
+    }
+
+    .today-weather-card .local-time {
+        font-size: 0.85em;
+        margin-bottom: 9px;
+        text-align: left;
+        opacity: 0.8;
     }
 
     .today-weather-card .city-name-display {

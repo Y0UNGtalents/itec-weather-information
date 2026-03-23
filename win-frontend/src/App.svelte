@@ -124,6 +124,7 @@
 
         dailyForecasts = rawData.map((item) => ({
             date: new Date(item.forecastDate),
+            localTime: item.cityLocalTimeMs ? new Date(item.cityLocalTimeMs) : new Date(item.forecastDate),
             city: item.city,
             timezoneOffsetSeconds: item.timezoneOffsetSeconds,
             temperature: item.temperature,
